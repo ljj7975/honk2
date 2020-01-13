@@ -1,3 +1,5 @@
 tqdm
 numpy
 torch
+git+https://github.com/daemon/pytorch-pcen
+librosa

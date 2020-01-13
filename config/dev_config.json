@@ -1,0 +1,55 @@
+{
+
+    "model": {
+        "name": "ResNet",
+        "config": {
+            "n_labels": 10,
+            "res_pool": [
+                2,
+                2
+            ],
+            "n_feature_maps": 45,
+            "n_layers": 6
+        }
+    },
+
+    "training_data_loader": {
+        "name": "GSCDataLoader",
+        "config": {
+            "data_dir": "/data/kws/speech_commands",
+            "batch_size": 512,
+            "sample_rate": 16000,
+            "audio_preprocessing": "MFCCs",
+            "dataset_ratio": 0.9
+        }
+    },
+
+    "test_data_loader": {
+        "name": "GSCDataLoader",
+        "config": {
+            "data_dir": "/data/kws/speech_commands",
+            "batch_size": 512,
+            "sample_rate": 16000,
+            "audio_preprocessing": "MFCCs",
+            "dataset_ratio": 0.1
+        }
+    },
+
+    "optimizer": {
+        "name": "SGD",
+        "config": {
+            "lr": 0.01,
+            "nesterov": false,
+            "weight_decay": 0.00001,
+            "momentum": 0.9
+        }
+    },
+
+    "seed": 100,
+    "epoch": 5,
+    "metric": "pred_acc",
+    "loss_fn": "ce_loss",
+    "num_gpu": 0,
+    "output_dir": 0
+
+}
