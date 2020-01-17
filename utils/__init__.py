@@ -9,4 +9,10 @@ from .file_utils import ensure_dir, \
                         load_pkl, \
                         save_pkl
 
+from .singleton import Singleton
+
 from .torch_utils import prepare_device
+
+from .dataset_utils import LABEL_SILENCE, \
+                           LABEL_UNKNOWN, \
+                           DatasetType

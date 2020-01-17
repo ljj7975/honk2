@@ -1,1 +1,1 @@
-from .gsc_data_loader import GSCDataLoader
+from .audio_data_loader import AudioDataLoader

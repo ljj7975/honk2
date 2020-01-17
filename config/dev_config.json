@@ -3,7 +3,6 @@
     "model": {
         "name": "ResNet",
         "config": {
-            "n_labels": 10,
             "res_pool": [
                 2,
                 2
@@ -13,26 +12,56 @@
         }
     },
 
-    "training_data_loader": {
-        "name": "GSCDataLoader",
-        "config": {
-            "data_dir": "/data/kws/speech_commands",
-            "batch_size": 512,
-            "sample_rate": 16000,
-            "audio_preprocessing": "MFCCs",
-            "dataset_ratio": 0.9
+    "datasets": {
+        "train": {
+            "dataset": {
+                "name": "GSCDataset",
+                "config": {
+                    "noise_pct": 0.1
+                }
+            },
+            "data_loader": {
+                "name":"AudioDataLoader",
+                "config": {}
+            }
+        },
+        "dev": {
+            "dataset": {
+                "name": "GSCDataset",
+                "config": {
+                    "noise_pct": 0.0
+                }
+            },
+            "data_loader": {
+                "name":"AudioDataLoader",
+                "config": {}
+            }
+        },
+        "test": {
+            "dataset": {
+                "name": "GSCDataset",
+                "config": {
+                    "noise_pct": 0.0
+                }
+            },
+            "data_loader": {
+                "name":"AudioDataLoader",
+                "config": {}
+            }
         }
     },
 
-    "test_data_loader": {
-        "name": "GSCDataLoader",
-        "config": {
-            "data_dir": "/data/kws/speech_commands",
-            "batch_size": 512,
-            "sample_rate": 16000,
-            "audio_preprocessing": "MFCCs",
-            "dataset_ratio": 0.1
-        }
+    "GSCDataset": {
+        "data_dir": "/data/kws/speech_commands",
+        "sample_rate": 16000,
+        "group_speakers_by_id": true,
+        "dev_pct": 0.1,
+        "test_pct": 0.1
+    },
+
+    "AudioDataLoader": {
+        "audio_preprocessing": "MFCCs",
+        "batch_size": 512
     },
 
     "optimizer": {
@@ -45,6 +74,9 @@
         }
     },
 
+    "unknown_class": true,
+    "silence_class": true,
+    "target_class": ["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go"],
     "seed": 100,
     "epoch": 5,
     "metric": "pred_acc",
