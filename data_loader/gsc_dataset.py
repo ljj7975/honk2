@@ -74,8 +74,6 @@ class GSCDatasetPreprocessor(metaclass=Singleton):
                 bucket = self.get_bucket_from_file_name(audio_file, config["group_speakers_by_id"])
                 self.distribute_to_dataset(bucket, audio_file, label)
 
-            audio_files_by_class.pop(class_name)
-
         # unknwon class
         if config["unknown_class"]:
             unknwon_label = len(config["target_class"])
