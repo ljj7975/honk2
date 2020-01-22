@@ -1,4 +1,5 @@
 import argparse
+import copy
 import torch
 import numpy as np
 import os
@@ -10,8 +11,34 @@ import loss_function as loss_fn_modules
 import torch.optim as optimizer_modules
 from datetime import datetime
 from tqdm import tqdm
-from utils import prepare_device, load_json, ensure_dir
+from utils import prepare_device, load_json, ensure_dir, DatasetType
 
+
+def merge_configs(base_config, additional_config):
+    new_config = copy.deepcopy(base_config)
+    for key, value in additional_config.items():
+        new_config[key] = value
+
+    return new_config
+
+def init_data_loader(config, type):
+    type_key = type.value
+    dataset_name = config["datasets"][type_key]["dataset"]["name"]
+    dataset_config = config["datasets"][type_key]["dataset"]["config"]
+    dataset_config = merge_configs(config[dataset_name], dataset_config)
+    dataset_config["target_class"] = config["target_class"]
+    dataset_config["unknown_class"] = config["unknown_class"]
+    dataset_config["silence_class"] = config["silence_class"]
+    dataset_config["type"] = type
+
+    data_loader_name = config["datasets"][type_key]["data_loader"]["name"]
+    data_loader_config = config["datasets"][type_key]["data_loader"]["config"]
+    data_loader_config = merge_configs(config[data_loader_name], data_loader_config)
+
+    data_loader_class = getattr(data_loader_modules, data_loader_name)
+    data_loader = data_loader_class(data_loader_config, dataset_config)
+
+    return data_loader
 
 def main(mode, config):
 
@@ -30,8 +57,16 @@ def main(mode, config):
 
 
     # Preapre model
+    n_labels = len(config["target_class"])
+    if config["unknown_class"]:
+        n_labels += 1
+    if config["silence_class"]:
+        n_labels += 1
+
     model_config = config["model"]
     model_class = getattr(model_modules, model_config["name"])
+
+    model_config["config"]["n_labels"] = n_labels
     model = model_class(model_config["config"])
 
     if "trained_model" in model_config:
@@ -50,15 +85,14 @@ def main(mode, config):
 
 
     # Prepare DataLoader
-    training_data_loader_config = config["training_data_loader"]
-    training_data_loader_class = getattr(data_loader_modules, training_data_loader_config["name"])
-    training_data_loader = training_data_loader_class(training_data_loader_config["config"])
-    print(f"train data loader: {training_data_loader}")
+    train_data_loader = init_data_loader(config, DatasetType.TRAIN)
+    print(f"training dataset size: {len(train_data_loader.dataset)}")
 
-    test_data_loader_config = config["test_data_loader"]
-    test_data_loader_class = getattr(data_loader_modules, test_data_loader_config["name"])
-    test_data_loader = test_data_loader_class(test_data_loader_config["config"])
-    print(f"test data loader: {test_data_loader}")
+    dev_data_loader = init_data_loader(config, DatasetType.DEV)
+    print(f"dev dataset size: {len(dev_data_loader.dataset)}")
+
+    test_data_loader = init_data_loader(config, DatasetType.TEST)
+    print(f"test dataset size: {len(test_data_loader.dataset)}")
 
 
     # Prepare directory for trained model
@@ -95,7 +129,7 @@ def main(mode, config):
         best_metric = 0
         best_loss = 0
 
-        training_log = {
+        train_log = {
             "loss" : [],
             "metric" : []
         }
@@ -104,7 +138,7 @@ def main(mode, config):
             total_loss = 0
             total_metric = 0
 
-            for _, (data, target) in enumerate(training_data_loader):
+            for _, (data, target) in enumerate(train_data_loader):
                 data, target = data.to(device), target.to(device)
 
                 optimizer.zero_grad()
@@ -116,27 +150,27 @@ def main(mode, config):
                 total_loss += loss.item()
                 total_metric += metric(output, target)
 
-            training_log["loss"].append(total_loss / len(training_data_loader))
-            training_log["metric"].append(total_metric / len(training_data_loader))
+            train_log["loss"].append(total_loss / len(train_data_loader))
+            train_log["metric"].append(total_metric / len(train_data_loader))
 
             if epoch % config["checkpoint_frequency"] == 0:
                 torch.save(model.state_dict(), checkpoint_path_template.format(epoch))
 
-                print(f"epochs {epoch}")
-                print(f"\tloss: {training_log['loss'][-1]}")
-                print(f"\tmetric: {training_log['metric'][-1]}")
+                print("epochs {0}".format(epoch))
+                print("\tloss: {0}".format(train_log["loss"][-1]))
+                print("\tmetric: {0}".format(train_log["metric"][-1]))
 
-                if training_log["metric"][-1] > best_metric:
+                if train_log["metric"][-1] > best_metric:
                     print("\tsaving the model with the best metric")
                     torch.save(model.state_dict(), best_model_path)
                     best_epoch = epoch
-                    best_loss = training_log["loss"][-1]
-                    best_metric = training_log["metric"][-1]
+                    best_loss = train_log["loss"][-1]
+                    best_metric = train_log["metric"][-1]
 
         print("Training results")
-        print(f"\tbest_epoch: {best_epoch}")
-        print(f"\tbest_loss: {best_loss}")
-        print(f"\tbest_metric: {best_metric}")
+        print("\tbest_epoch: {0}".format(best_epoch))
+        print("\tbest_loss: {0}".format(best_loss))
+        print("\tbest_metric: {0}".format(best_metric))
 
 
     # For train mode, evalaute the best model
@@ -163,14 +197,14 @@ def main(mode, config):
     print(f"\tbest_metric: {total_metric / len(test_data_loader)}")
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Neural Feature Extractor')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Neural Feature Extractor")
 
-    parser.add_argument('--config', default=None, required=True, type=str,
-                        help='path to config file')
+    parser.add_argument("--config", default=None, required=True, type=str,
+                        help="path to config file")
 
-    parser.add_argument('--mode', type=str, default='train',
-                        choices=['train', 'test'], help='whether to train a new model or not (default: train)')
+    parser.add_argument("--mode", type=str, default="train",
+                        choices=["train", "test"], help="whether to train a new model or not (default: train)")
 
     args = parser.parse_args()
 
