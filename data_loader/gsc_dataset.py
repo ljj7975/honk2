@@ -4,6 +4,7 @@ import numpy as np
 import os
 import random
 import re
+from pathlib import Path
 from torch.utils.data import Dataset
 from utils import Singleton, LABEL_SILENCE, LABEL_UNKNOWN, DatasetType
 
@@ -11,7 +12,7 @@ from utils import Singleton, LABEL_SILENCE, LABEL_UNKNOWN, DatasetType
 class GSCDatasetPreprocessor(metaclass=Singleton):
 
     def __init__(self, config):
-        super(GSCDatasetPreprocessor, self).__init__()
+        super().__init__()
 
         # organize audio files by class
         unknown_class_name = "_UNKNOWN_"
@@ -19,11 +20,12 @@ class GSCDatasetPreprocessor(metaclass=Singleton):
         audio_files_by_class = {}
         audio_counts_by_class = {}
 
-        for class_name in os.listdir(config["data_dir"]):
-            dir_path = os.path.join(config["data_dir"], class_name)
+        for class_path in Path(config["data_dir"]).iterdir():
 
-            if not os.path.isdir(dir_path):
+            if not class_path.is_dir():
                 continue
+
+            class_name = class_path.name
 
             if class_name not in config["target_class"] and class_name != "_background_noise_":
                 class_name = unknown_class_name
@@ -33,14 +35,13 @@ class GSCDatasetPreprocessor(metaclass=Singleton):
                 audio_counts_by_class[class_name] = 0
 
             count = 0
-            for file_name in os.listdir(dir_path):
+            for file_path in class_path.iterdir():
 
-                if "wav" not in file_name:
+                if ".wav" != file_path.suffix:
                     continue
 
                 count += 1
-                file_path = os.path.join(dir_path, file_name)
-                audio_files_by_class[class_name].append(file_path)
+                audio_files_by_class[class_name].append(file_path.as_posix())
 
             audio_counts_by_class[class_name] += count
 
@@ -74,14 +75,14 @@ class GSCDatasetPreprocessor(metaclass=Singleton):
                 bucket = self.get_bucket_from_file_name(audio_file, config["group_speakers_by_id"])
                 self.distribute_to_dataset(bucket, audio_file, label)
 
-        # unknwon class
+        # unknown class
         if config["unknown_class"]:
-            unknwon_label = len(config["target_class"])
+            unknown_label = len(config["target_class"])
             for dataset in DatasetType:
                 unknown_size = int(len(self.labels_by_dataset[dataset]) / len(self.label_mapping.keys()))
                 self.audio_files_by_dataset[dataset] += random.sample(audio_files_by_class[unknown_class_name], unknown_size)
-                self.labels_by_dataset[dataset] += ([unknwon_label] * unknown_size)
-            self.label_mapping[unknwon_label] = LABEL_UNKNOWN
+                self.labels_by_dataset[dataset] += ([unknown_label] * unknown_size)
+            self.label_mapping[unknown_label] = LABEL_UNKNOWN
 
         # silence class
         if config["silence_class"]:
@@ -120,7 +121,7 @@ class GSCDatasetPreprocessor(metaclass=Singleton):
 
 class GSCDataset(Dataset):
     def __init__(self, config):
-        super(GSCDataset, self).__init__()
+        super().__init__()
         dataset = GSCDatasetPreprocessor(config)
 
         type = config["type"]

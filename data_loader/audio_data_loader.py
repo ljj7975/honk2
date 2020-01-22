@@ -10,7 +10,7 @@ class AudioDataLoader(DataLoader):
         self.audio_preprocessing = data_loader_config["audio_preprocessing"]
         self.audio_processor = AudioProcessor()
 
-        super(AudioDataLoader, self).__init__(
+        super().__init__(
             dataset=self.dataset,
             batch_size=data_loader_config["batch_size"],
             shuffle=False,

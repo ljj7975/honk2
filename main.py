@@ -156,9 +156,9 @@ def main(mode, config):
             if epoch % config["checkpoint_frequency"] == 0:
                 torch.save(model.state_dict(), checkpoint_path_template.format(epoch))
 
-                print(f"epochs {epoch}")
-                print(f"\tloss: {train_log['loss'][-1]}")
-                print(f"\tmetric: {train_log['metric'][-1]}")
+                print("epochs {0}".format(epoch))
+                print("\tloss: {0}".format(train_log["loss"][-1]))
+                print("\tmetric: {0}".format(train_log["metric"][-1]))
 
                 if train_log["metric"][-1] > best_metric:
                     print("\tsaving the model with the best metric")
@@ -168,9 +168,9 @@ def main(mode, config):
                     best_metric = train_log["metric"][-1]
 
         print("Training results")
-        print(f"\tbest_epoch: {best_epoch}")
-        print(f"\tbest_loss: {best_loss}")
-        print(f"\tbest_metric: {best_metric}")
+        print("\tbest_epoch: {0}".format(best_epoch))
+        print("\tbest_loss: {0}".format(best_loss))
+        print("\tbest_metric: {0}".format(best_metric))
 
 
     # For train mode, evalaute the best model
@@ -197,14 +197,14 @@ def main(mode, config):
     print(f"\tbest_metric: {total_metric / len(test_data_loader)}")
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Neural Feature Extractor')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Neural Feature Extractor")
 
-    parser.add_argument('--config', default=None, required=True, type=str,
-                        help='path to config file')
+    parser.add_argument("--config", default=None, required=True, type=str,
+                        help="path to config file")
 
-    parser.add_argument('--mode', type=str, default='train',
-                        choices=['train', 'test'], help='whether to train a new model or not (default: train)')
+    parser.add_argument("--mode", type=str, default="train",
+                        choices=["train", "test"], help="whether to train a new model or not (default: train)")
 
     args = parser.parse_args()
 

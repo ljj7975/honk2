@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 class ResNet(nn.Module):
     def __init__(self, config):
-        super(ResNet, self).__init__()
+        super().__init__()
         self.conv0 = nn.Conv2d(1, config["n_feature_maps"], (3, 3), padding=(1, 1), bias=False)
         if "res_pool" in config:
             self.pool = nn.AvgPool2d(config["res_pool"])
