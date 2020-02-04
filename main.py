@@ -11,7 +11,7 @@ import loss_function as loss_fn_modules
 import torch.optim as optimizer_modules
 from datetime import datetime
 from tqdm import tqdm
-from utils import prepare_device, load_json, ensure_dir, DatasetType
+from utils import prepare_device, load_json, DatasetType, Workspace
 
 
 def merge_configs(base_config, additional_config):
@@ -68,6 +68,7 @@ def main(mode, config):
 
     model_config["config"]["n_labels"] = n_labels
     model = model_class(model_config["config"])
+    model_name = type(model).__name__
 
     if "trained_model" in model_config:
         trained_model = model_config["trained_model"]
@@ -95,16 +96,6 @@ def main(mode, config):
     print(f"test dataset size: {len(test_data_loader.dataset)}")
 
 
-    # Prepare directory for trained model
-    now = datetime.now()
-    dt_string = now.strftime("%Y-%m-%d_%H:%M:%S")
-    config["output_dir"] = os.path.join(config["output_dir"], type(model).__name__, dt_string)
-    ensure_dir(config["output_dir"])
-
-    checkpoint_path_template = config["output_dir"] + "/checkpoint_{}.pt"
-    best_model_path = config["output_dir"] + "/best_model.pt"
-
-
     # Optimizer
     optimizer_config = config["optimizer"]
     optimizer_config["config"]["params"] = model.parameters()
@@ -114,7 +105,15 @@ def main(mode, config):
     loss_fn = getattr(loss_fn_modules, config["loss_fn"])
 
     # TODO:: support multiple metric
+    # TODO:: add flexibility for best metric (i.e. max, min)
     metric = getattr(metric_modules, config["metric"])
+
+
+    # Workspace preparation
+    now = datetime.now()
+    dt_string = now.strftime("%Y-%m-%d_%H:%M:%S")
+    output_dir = os.path.join(config["output_dir"], model_name, dt_string)
+    workspace = Workspace(output_dir, model, optimizer, loss_fn, metric)
 
 
     if mode == "train":
@@ -124,14 +123,12 @@ def main(mode, config):
 
         model.train()
 
-        # TODO:: add flexibility for best metric (i.e. max, min)
-        best_epoch = 0
-        best_metric = 0
-        best_loss = 0
-
         train_log = {
-            "loss" : [],
-            "metric" : []
+            "loss": [],
+            "metric": [],
+            "best_epoch": 0,
+            "best_metric": 0,
+            "best_loss": 0
         }
 
         for epoch in tqdm(range(total_epoch)):
@@ -153,29 +150,34 @@ def main(mode, config):
             train_log["loss"].append(total_loss / len(train_data_loader))
             train_log["metric"].append(total_metric / len(train_data_loader))
 
+            if train_log["metric"][-1] > train_log["best_metric"]:
+                print("\tsaving the model with the best metric")
+                train_log["best_epoch"] = epoch
+                train_log["best_loss"] = train_log["loss"][-1]
+                train_log["best_metric"] = train_log["metric"][-1]
+
+                workspace.save_best_model(train_log)
+
             if epoch % config["checkpoint_frequency"] == 0:
-                torch.save(model.state_dict(), checkpoint_path_template.format(epoch))
+                workspace.save_checkpoiunt(epoch, train_log)
 
                 print("epochs {0}".format(epoch))
                 print("\tloss: {0}".format(train_log["loss"][-1]))
                 print("\tmetric: {0}".format(train_log["metric"][-1]))
 
-                if train_log["metric"][-1] > best_metric:
-                    print("\tsaving the model with the best metric")
-                    torch.save(model.state_dict(), best_model_path)
-                    best_epoch = epoch
-                    best_loss = train_log["loss"][-1]
-                    best_metric = train_log["metric"][-1]
+        workspace.save_checkpoiunt(total_epoch-1, train_log)
+
+
+        # load the best model
+        checkpoint = workspace.load_best_model()
 
         print("Training results")
-        print("\tbest_epoch: {0}".format(best_epoch))
-        print("\tbest_loss: {0}".format(best_loss))
-        print("\tbest_metric: {0}".format(best_metric))
+        print("\tbest_epoch: {0}".format(checkpoint["best_epoch"]))
+        print("\tbest_loss: {0}".format(checkpoint["best_loss"]))
+        print("\tbest_metric: {0}".format(checkpoint["best_metric"]))
 
 
-    # For train mode, evalaute the best model
-    if mode == "train" and os.path.exists(best_model_path):
-        model.load_state_dict(torch.load(best_model_path))
+    # TODO:: support mode == 'test' case (or create explicit runnable script for test mode)
 
     model.eval()
 
@@ -194,7 +196,7 @@ def main(mode, config):
 
     print("Test results")
     print(f"\tloss: {total_loss / len(test_data_loader)}")
-    print(f"\tbest_metric: {total_metric / len(test_data_loader)}")
+    print(f"\tmetric: {total_metric / len(test_data_loader)}")
 
 
 if __name__ == "__main__":

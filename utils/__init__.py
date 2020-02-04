@@ -3,6 +3,10 @@ from .audio_processor import AudioProcessor
 from .color_print import ColorEnum, \
                          print_color
 
+from .dataset_utils import LABEL_SILENCE, \
+                           LABEL_UNKNOWN, \
+                           DatasetType
+
 from .file_utils import ensure_dir, \
                         load_json, \
                         save_json, \
@@ -13,6 +17,4 @@ from .singleton import Singleton
 
 from .torch_utils import prepare_device
 
-from .dataset_utils import LABEL_SILENCE, \
-                           LABEL_UNKNOWN, \
-                           DatasetType
+from .workspace import Workspace
