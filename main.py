@@ -4,14 +4,16 @@ import torch
 import numpy as np
 import os
 import random
+from datetime import datetime
+from tqdm import tqdm
+from utils import prepare_device, load_json, ensure_dir, DatasetType, find_cls
+
+# TODO :: create a separate file for triggering registry along with runnable scripts
 import model as model_modules
 import data_loader as data_loader_modules
 import metric as metric_modules
 import loss_function as loss_fn_modules
 import torch.optim as optimizer_modules
-from datetime import datetime
-from tqdm import tqdm
-from utils import prepare_device, load_json, ensure_dir, DatasetType
 
 
 def merge_configs(base_config, additional_config):
@@ -64,7 +66,7 @@ def main(mode, config):
         n_labels += 1
 
     model_config = config["model"]
-    model_class = getattr(model_modules, model_config["name"])
+    model_class = find_cls('resnet')
 
     model_config["config"]["n_labels"] = n_labels
     model = model_class(model_config["config"])
