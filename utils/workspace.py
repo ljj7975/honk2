@@ -14,13 +14,13 @@ class Workspace():
 
         ensure_dir(self.dir)
 
-    def __get_checkpoint_path(self, epoch):
+    def _get_checkpoint_path(self, epoch):
         return Path(self.dir, "checkpoint_{}.pt".format(epoch))
 
-    def __get_best_model_path(self):
+    def _get_best_model_path(self):
         return Path(self.dir, "best_model.pt")
 
-    def __save(self, path, accessories):
+    def _save(self, path, accessories):
         checkpoint = {
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
@@ -32,35 +32,31 @@ class Workspace():
 
         torch.save(checkpoint, path)
 
-    def save_checkpoiunt(self, epoch, accessories):
+    def save_checkpoint(self, epoch, accessories):
         accessories['epoch'] = epoch
-        path = self.__get_checkpoint_path(epoch)
+        path = self._get_checkpoint_path(epoch)
 
         if not os.path.exists(path):
-            self.__save(path, accessories)
+            self._save(path, accessories)
 
     def save_best_model(self, accessories):
-        path = self.__get_best_model_path()
-        self.__save(path, accessories)
+        path = self._get_best_model_path()
+        self._save(path, accessories)
 
-    def __load(self, path):
+    def _load(self, path):
         checkpoint = torch.load(path)
 
-        self.model.load_state_dict(checkpoint['model_state_dict'])
-        checkpoint.pop('model_state_dict')
-        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        checkpoint.pop('optimizer_state_dict')
-        self.loss_fn = checkpoint['loss_fn']
-        checkpoint.pop('loss_fn')
-        self.metric = checkpoint['metric']
-        checkpoint.pop('metric')
+        self.model.load_state_dict(checkpoint.pop('model_state_dict'))
+        self.optimizer.load_state_dict(checkpoint.pop('optimizer_state_dict'))
+        self.loss_fn = checkpoint.pop('loss_fn')
+        self.metric = checkpoint.pop('metric')
 
         return checkpoint
 
     def load_checkpoint(self, epoch):
-        path = self.__get_checkpoint_path(epoch)
-        return self.__load(path)
+        path = self._get_checkpoint_path(epoch)
+        return self._load(path)
 
     def load_best_model(self):
-        path = self.__get_best_model_path()
-        return self.__load(path)
+        path = self._get_best_model_path()
+        return self._load(path)

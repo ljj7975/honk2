@@ -159,22 +159,22 @@ def main(mode, config):
                 workspace.save_best_model(train_log)
 
             if epoch % config["checkpoint_frequency"] == 0:
-                workspace.save_checkpoiunt(epoch, train_log)
+                workspace.save_checkpoint(epoch, train_log)
 
-                print("epochs {0}".format(epoch))
-                print("\tloss: {0}".format(train_log["loss"][-1]))
-                print("\tmetric: {0}".format(train_log["metric"][-1]))
+                print("epochs {}".format(epoch))
+                print("\tloss: {}".format(train_log["loss"][-1]))
+                print("\tmetric: {}".format(train_log["metric"][-1]))
 
-        workspace.save_checkpoiunt(total_epoch-1, train_log)
+        workspace.save_checkpoint(total_epoch-1, train_log)
 
 
         # load the best model
         checkpoint = workspace.load_best_model()
 
         print("Training results")
-        print("\tbest_epoch: {0}".format(checkpoint["best_epoch"]))
-        print("\tbest_loss: {0}".format(checkpoint["best_loss"]))
-        print("\tbest_metric: {0}".format(checkpoint["best_metric"]))
+        print("\tbest_epoch: {}".format(checkpoint["best_epoch"]))
+        print("\tbest_loss: {}".format(checkpoint["best_loss"]))
+        print("\tbest_metric: {}".format(checkpoint["best_metric"]))
 
 
     # TODO:: support mode == 'test' case (or create explicit runnable script for test mode)
