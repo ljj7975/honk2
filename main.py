@@ -37,7 +37,7 @@ def init_data_loader(config, type):
     data_loader_config = config["datasets"][type_key]["data_loader"]["config"]
     data_loader_config = merge_configs(config[data_loader_name], data_loader_config)
 
-    data_loader_class = getattr(data_loader_modules, data_loader_name)
+    data_loader_class = find_cls(f"data_loader.{data_loader_name.lower()}")
     data_loader = data_loader_class(data_loader_config, dataset_config)
 
     return data_loader
@@ -66,7 +66,7 @@ def main(mode, config):
         n_labels += 1
 
     model_config = config["model"]
-    model_class = find_cls('resnet')
+    model_class = find_cls(f"model.{model_config['name'].lower()}")
 
     model_config["config"]["n_labels"] = n_labels
     model = model_class(model_config["config"])
@@ -113,10 +113,10 @@ def main(mode, config):
     optimizer_class = getattr(optimizer_modules, optimizer_config["name"])
     optimizer = optimizer_class(**optimizer_config["config"])
 
-    loss_fn = getattr(loss_fn_modules, config["loss_fn"])
+    loss_fn = find_cls(f"loss_fn.{config['loss_fn'].lower()}")
 
     # TODO:: support multiple metric
-    metric = getattr(metric_modules, config["metric"])
+    metric = find_cls(f"metric.{config['metric'].lower()}")
 
 
     if mode == "train":

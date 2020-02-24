@@ -2,7 +2,10 @@ import torch
 from .gsc_dataset import GSCDataset
 from utils import AudioProcessor
 from torch.utils.data import DataLoader
+from utils import register_cls
 
+
+@register_cls('data_loader.audiodataloader')
 class AudioDataLoader(DataLoader):
     def __init__(self, data_loader_config, dataset_config):
         self.dataset = GSCDataset(dataset_config)

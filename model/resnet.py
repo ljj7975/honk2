@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils import register
+from utils import register_cls
+
 
 @register_cls('model.resnet')
 class ResNet(nn.Module):
