@@ -82,6 +82,6 @@
     "metric": "pred_acc",
     "loss_fn": "ce_loss",
     "num_gpu": 3,
-    "output_dir": "checkpoint",
+    "output_dir": "workspaces",
     "checkpoint_frequency": 3
 }
