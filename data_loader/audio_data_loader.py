@@ -1,7 +1,8 @@
 import torch
+from torch.utils.data import DataLoader
+
 from .gsc_dataset import GSCDataset
 from utils import AudioProcessor
-from torch.utils.data import DataLoader
 from utils import register_cls
 
 

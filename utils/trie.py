@@ -1,15 +1,15 @@
 from collections import defaultdict
 
+
 class Trie():
+    def __init__(self):
+        self.root = self.Node()
+        self.count = 0
 
     class Node():
         def __init__(self, value=None):
             self.value = value
             self.children = {}
-
-    def __init__(self):
-        self.root = self.Node()
-        self.count = 0
 
     def add(self, key, value):
         path = key.split('.')

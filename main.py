@@ -1,12 +1,14 @@
 import argparse
 import copy
-import torch
-import numpy as np
 import os
 import random
-import torch.optim as optimizer_modules
 from datetime import datetime
+
+import torch
+import numpy as np
+import torch.optim as optimizer_modules
 from tqdm import tqdm
+
 from utils import DatasetType, Workspace
 from utils import find_cls, load_json, prepare_device
 

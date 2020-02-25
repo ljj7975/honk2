@@ -1,5 +1,6 @@
 from .trie import Trie
 
+
 _REGISTRY = Trie()
 
 def register_cls(identifier):

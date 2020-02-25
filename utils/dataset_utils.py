@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 LABEL_SILENCE = "__silence__"
 LABEL_UNKNOWN = "__unknown__"
 
