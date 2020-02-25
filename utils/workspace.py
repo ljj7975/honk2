@@ -5,12 +5,12 @@ from .file_utils import ensure_dir
 
 
 class Workspace():
-    def __init__(self, dir, model, optimizer, loss_fn, metric):
+    def __init__(self, dir, model, loss_fn, metric, optimizer=None):
         self.dir = dir
         self.model = model
-        self.optimizer = optimizer
         self.loss_fn = loss_fn
         self.metric = metric
+        self.optimizer = optimizer
 
         ensure_dir(self.dir)
 
@@ -23,9 +23,9 @@ class Workspace():
     def _save(self, path, accessories):
         checkpoint = {
             'model_state_dict': self.model.state_dict(),
-            'optimizer_state_dict': self.optimizer.state_dict(),
             'loss_fn': self.loss_fn,
-            'metric': self.metric
+            'metric': self.metric,
+            'optimizer_state_dict': self.optimizer.state_dict()
             }
 
         checkpoint.update(accessories)
@@ -47,9 +47,11 @@ class Workspace():
         checkpoint = torch.load(path)
 
         self.model.load_state_dict(checkpoint.pop('model_state_dict'))
-        self.optimizer.load_state_dict(checkpoint.pop('optimizer_state_dict'))
         self.loss_fn = checkpoint.pop('loss_fn')
         self.metric = checkpoint.pop('metric')
+
+        if self.optimizer:
+            self.optimizer.load_state_dict(checkpoint.pop('optimizer_state_dict'))
 
         return checkpoint
 

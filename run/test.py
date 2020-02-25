@@ -80,21 +80,9 @@ def main(config):
 
 
     # Prepare DataLoader
-    train_data_loader = init_data_loader(config, DatasetType.TRAIN)
-    print(f"training dataset size: {len(train_data_loader.dataset)}")
-
-    dev_data_loader = init_data_loader(config, DatasetType.DEV)
-    print(f"dev dataset size: {len(dev_data_loader.dataset)}")
-
     test_data_loader = init_data_loader(config, DatasetType.TEST)
     print(f"test dataset size: {len(test_data_loader.dataset)}")
 
-
-    # Optimizer
-    optimizer_config = config["optimizer"]
-    optimizer_config["config"]["params"] = model.parameters()
-    optimizer_class = getattr(optimizer_modules, optimizer_config["name"])
-    optimizer = optimizer_class(**optimizer_config["config"])
 
     loss_fn = getattr(loss_fn_modules, config["loss_fn"])
 
@@ -104,59 +92,8 @@ def main(config):
 
 
     # Workspace preparation
-    now = datetime.now()
-    dt_string = now.strftime("%Y-%m-%d_%H:%M:%S")
-    output_dir = os.path.join(config["output_dir"], model_name, dt_string)
-    workspace = Workspace(output_dir, model, loss_fn, metric, optimizer)
-
-    # Train model
-    total_epoch = config["epoch"]
-
-    model.train()
-
-    train_log = {
-        "loss": [],
-        "metric": [],
-        "best_epoch": 0,
-        "best_metric": 0,
-        "best_loss": 0
-    }
-
-    for epoch in tqdm(range(total_epoch)):
-        total_loss = 0
-        total_metric = 0
-
-        for _, (data, target) in enumerate(train_data_loader):
-            data, target = data.to(device), target.to(device)
-
-            optimizer.zero_grad()
-            output = model(data)
-            loss = loss_fn(output, target)
-            loss.backward()
-            optimizer.step()
-
-            total_loss += loss.item()
-            total_metric += metric(output, target)
-
-        train_log["loss"].append(total_loss / len(train_data_loader))
-        train_log["metric"].append(total_metric / len(train_data_loader))
-
-        if train_log["metric"][-1] > train_log["best_metric"]:
-            print("\tsaving the model with the best metric")
-            train_log["best_epoch"] = epoch
-            train_log["best_loss"] = train_log["loss"][-1]
-            train_log["best_metric"] = train_log["metric"][-1]
-
-            workspace.save_best_model(train_log)
-
-        if epoch % config["checkpoint_frequency"] == 0:
-            workspace.save_checkpoint(epoch, train_log)
-
-            print("epochs {}".format(epoch))
-            print("\tloss: {}".format(train_log["loss"][-1]))
-            print("\tmetric: {}".format(train_log["metric"][-1]))
-
-    workspace.save_checkpoint(total_epoch-1, train_log)
+    trained_model_dir = config["trained_model_dir"]
+    workspace = Workspace(trained_model_dir, model, loss_fn, metric)
 
     # load the best model
     checkpoint = workspace.load_best_model()
@@ -165,6 +102,28 @@ def main(config):
     print("\tbest_epoch: {}".format(checkpoint["best_epoch"]))
     print("\tbest_loss: {}".format(checkpoint["best_loss"]))
     print("\tbest_metric: {}".format(checkpoint["best_metric"]))
+
+
+    # TODO:: support mode == 'test' case (or create explicit runnable script for test mode)
+
+    model.eval()
+
+    total_loss = 0
+    total_metric = 0
+
+    for batch_idx, (data, target) in enumerate(tqdm(test_data_loader)):
+        data, target = data.to(device), target.to(device)
+
+        output = model(data)
+        loss = loss_fn(output, target)
+
+        total_loss += loss.item()
+        total_metric += metric(output, target)
+
+
+    print("Test results")
+    print(f"\tloss: {total_loss / len(test_data_loader)}")
+    print(f"\tmetric: {total_metric / len(test_data_loader)}")
 
 
 if __name__ == "__main__":
