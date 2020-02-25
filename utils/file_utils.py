@@ -1,6 +1,8 @@
-import pickle
 import json
 from pathlib import Path
+
+import pickle
+
 
 def ensure_dir(dirname):
     dirname = Path(dirname)

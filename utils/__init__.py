@@ -3,6 +3,9 @@ from .audio_processor import AudioProcessor
 from .color_print import ColorEnum, \
                          print_color
 
+from .class_registry import register_cls, \
+                            find_cls
+
 from .dataset_utils import LABEL_SILENCE, \
                            LABEL_UNKNOWN, \
                            DatasetType

@@ -1,11 +1,13 @@
 import hashlib
-import librosa
-import numpy as np
 import os
 import random
 import re
 from pathlib import Path
+
+import librosa
+import numpy as np
 from torch.utils.data import Dataset
+
 from utils import Singleton, LABEL_SILENCE, LABEL_UNKNOWN, DatasetType
 
 
