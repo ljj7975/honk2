@@ -83,6 +83,7 @@
     "loss_fn": "ce_loss",
     "num_gpu": 3,
     "output_dir": "workspaces",
-    "trained_model_dir": "workspaces/ResNet/trained_model/",
+    "evaluate_model_dir": "workspaces/ResNet/sample_trained_model/",
+    "evaluate_epoch": 10,
     "checkpoint_frequency": 3
 }

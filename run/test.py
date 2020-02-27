@@ -1,44 +1,39 @@
 import argparse
-import copy
-import torch
-import numpy as np
 import os
 import random
-import model as model_modules
-import data_loader as data_loader_modules
-import metric as metric_modules
-import loss_function as loss_fn_modules
-import torch.optim as optimizer_modules
 from datetime import datetime
+
+import torch
+import numpy as np
+import torch.optim as optimizer_modules
 from tqdm import tqdm
-from utils import prepare_device, load_json, DatasetType, Workspace
 
+from .runnable_utils import merge_configs, init_data_loader
+from utils import DatasetType, Workspace
+from utils import find_cls, load_json, prepare_device
 
-def merge_configs(base_config, additional_config):
-    new_config = copy.deepcopy(base_config)
-    for key, value in additional_config.items():
-        new_config[key] = value
+def evaluate(device, prefix, model, data_loader, loss_fn, metric):
+    model.eval()
 
-    return new_config
+    total_loss = 0
+    total_metric = 0
 
-def init_data_loader(config, type):
-    type_key = type.value
-    dataset_name = config["datasets"][type_key]["dataset"]["name"]
-    dataset_config = config["datasets"][type_key]["dataset"]["config"]
-    dataset_config = merge_configs(config[dataset_name], dataset_config)
-    dataset_config["target_class"] = config["target_class"]
-    dataset_config["unknown_class"] = config["unknown_class"]
-    dataset_config["silence_class"] = config["silence_class"]
-    dataset_config["type"] = type
+    model.train()
+    for _, (data, target) in enumerate(tqdm(data_loader, desc=f"Evaluating {prefix} dataset")):
+        data, target = data.to(device), target.to(device)
 
-    data_loader_name = config["datasets"][type_key]["data_loader"]["name"]
-    data_loader_config = config["datasets"][type_key]["data_loader"]["config"]
-    data_loader_config = merge_configs(config[data_loader_name], data_loader_config)
+        output = model(data)
+        loss = loss_fn(output, target)
 
-    data_loader_class = getattr(data_loader_modules, data_loader_name)
-    data_loader = data_loader_class(data_loader_config, dataset_config)
+        total_loss += loss.item()
+        total_metric += metric(output, target)
 
-    return data_loader
+    log = {
+        "loss": total_loss / len(data_loader),
+        "metric": total_metric / len(data_loader)
+    }
+
+    return log
 
 def main(config):
 
@@ -64,7 +59,7 @@ def main(config):
         n_labels += 1
 
     model_config = config["model"]
-    model_class = getattr(model_modules, model_config["name"])
+    model_class = find_cls(f"model.{model_config['name'].lower()}")
 
     model_config["config"]["n_labels"] = n_labels
     model = model_class(model_config["config"])
@@ -78,52 +73,38 @@ def main(config):
     model.to(device)
     print("model:\n", model)
 
-
-    # Prepare DataLoader
     test_data_loader = init_data_loader(config, DatasetType.TEST)
     print(f"test dataset size: {len(test_data_loader.dataset)}")
 
 
-    loss_fn = getattr(loss_fn_modules, config["loss_fn"])
+    # Model evaluation initialization
+    loss_fn = find_cls(f"loss_fn.{config['loss_fn'].lower()}")
 
-    # TODO:: support multiple metric
     # TODO:: add flexibility for best metric (i.e. max, min)
-    metric = getattr(metric_modules, config["metric"])
+    metric = find_cls(f"metric.{config['metric'].lower()}")
+
+    trained_model_dir = config["evaluate_model_dir"]
+    workspace = Workspace(device, trained_model_dir, model, loss_fn, metric)
 
 
-    # Workspace preparation
-    trained_model_dir = config["trained_model_dir"]
-    workspace = Workspace(trained_model_dir, model, loss_fn, metric)
-
-    # load the best model
-    checkpoint = workspace.load_best_model()
+    # load the model to evaluate
+    if "evaluate_epoch" in config:
+        checkpoint = workspace.load_checkpoint(config["evaluate_epoch"])
+    else:
+        checkpoint = workspace.load_best_model()
 
     print("Training results")
     print("\tbest_epoch: {}".format(checkpoint["best_epoch"]))
-    print("\tbest_loss: {}".format(checkpoint["best_loss"]))
-    print("\tbest_metric: {}".format(checkpoint["best_metric"]))
+    print("\tbest_dev_loss: {}".format(checkpoint["best_dev_loss"]))
+    print("\tbest_dev_metric: {}".format(checkpoint["best_dev_metric"]))
 
 
-    # TODO:: support mode == 'test' case (or create explicit runnable script for test mode)
-
-    model.eval()
-
-    total_loss = 0
-    total_metric = 0
-
-    for batch_idx, (data, target) in enumerate(tqdm(test_data_loader)):
-        data, target = data.to(device), target.to(device)
-
-        output = model(data)
-        loss = loss_fn(output, target)
-
-        total_loss += loss.item()
-        total_metric += metric(output, target)
-
+    # Test model
+    test_log = evaluate(device, "test", model, test_data_loader, loss_fn, metric)
 
     print("Test results")
-    print(f"\tloss: {total_loss / len(test_data_loader)}")
-    print(f"\tmetric: {total_metric / len(test_data_loader)}")
+    print("\ttest_loss: {}".format(test_log["loss"]))
+    print("\ttest_metric: {}".format(test_log["metric"]))
 
 
 if __name__ == "__main__":

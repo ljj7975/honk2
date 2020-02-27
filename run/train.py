@@ -1,5 +1,4 @@
 import argparse
-import copy
 import os
 import random
 from datetime import datetime
@@ -9,35 +8,10 @@ import numpy as np
 import torch.optim as optimizer_modules
 from tqdm import tqdm
 
+from .runnable_utils import merge_configs, init_data_loader
 from utils import DatasetType, Workspace
 from utils import find_cls, load_json, prepare_device
 
-
-def merge_configs(base_config, additional_config):
-    new_config = copy.deepcopy(base_config)
-    for key, value in additional_config.items():
-        new_config[key] = value
-
-    return new_config
-
-def init_data_loader(config, type):
-    type_key = type.value
-    dataset_name = config["datasets"][type_key]["dataset"]["name"]
-    dataset_config = config["datasets"][type_key]["dataset"]["config"]
-    dataset_config = merge_configs(config[dataset_name], dataset_config)
-    dataset_config["target_class"] = config["target_class"]
-    dataset_config["unknown_class"] = config["unknown_class"]
-    dataset_config["silence_class"] = config["silence_class"]
-    dataset_config["type"] = type
-
-    data_loader_name = config["datasets"][type_key]["data_loader"]["name"]
-    data_loader_config = config["datasets"][type_key]["data_loader"]["config"]
-    data_loader_config = merge_configs(config[data_loader_name], data_loader_config)
-
-    data_loader_class = find_cls(f"data_loader.{data_loader_name.lower()}")
-    data_loader = data_loader_class(data_loader_config, dataset_config)
-
-    return data_loader
 
 def main(config):
 
@@ -69,12 +43,6 @@ def main(config):
     model = model_class(model_config["config"])
     model_name = type(model).__name__
 
-    if "trained_model" in model_config:
-        trained_model = model_config["trained_model"]
-        print(f"pretrained model: {trained_model}")
-
-        model.load_state_dict(torch.load(trained_model, map_location=device), strict=False)
-
 
     # Multiple GPU supports
     if len(gpu_device_ids) > 1:
@@ -95,7 +63,7 @@ def main(config):
     print(f"test dataset size: {len(test_data_loader.dataset)}")
 
 
-    # Optimizer
+    # Model training initialization
     optimizer_config = config["optimizer"]
     optimizer_config["config"]["params"] = model.parameters()
     optimizer_class = getattr(optimizer_modules, optimizer_config["name"])
@@ -106,40 +74,15 @@ def main(config):
     # TODO:: add flexibility for best metric (i.e. max, min)
     metric = find_cls(f"metric.{config['metric'].lower()}")
 
-
     # Workspace preparation
     now = datetime.now()
     dt_string = now.strftime("%Y-%m-%d_%H:%M:%S")
     output_dir = os.path.join(config["output_dir"], model_name, dt_string)
-    workspace = Workspace(output_dir, model, loss_fn, metric, optimizer)
+    workspace = Workspace(device, output_dir, model, loss_fn, metric, optimizer)
 
 
     # Train model
     total_epoch = config["epoch"]
-
-    def evaluate(prefix, model, data_loader, loss_fn, metric):
-        model.eval()
-
-        total_loss = 0
-        total_metric = 0
-
-        model.train()
-        for _, (data, target) in enumerate(tqdm(data_loader, desc=f"Evaluating {prefix} dataset")):
-            data, target = data.to(device), target.to(device)
-
-            output = model(data)
-            loss = loss_fn(output, target)
-
-            total_loss += loss.item()
-            total_metric += metric(output, target)
-
-        log = {
-            "loss": total_loss / len(data_loader),
-            "metric": total_metric / len(data_loader)
-        }
-
-        return log
-
 
     train_log = {
         "train_loss": [],
@@ -172,7 +115,7 @@ def main(config):
         train_log["train_loss"].append(total_loss / len(train_data_loader))
         train_log["train_metric"].append(total_metric / len(train_data_loader))
 
-        dev_log = evaluate("dev", model, dev_data_loader, loss_fn, metric)
+        dev_log = evaluate(device, "dev", model, dev_data_loader, loss_fn, metric)
 
         train_log["dev_loss"].append(dev_log["loss"])
         train_log["dev_metric"].append(dev_log["metric"])
@@ -203,6 +146,14 @@ def main(config):
     print("\tbest_epoch: {}".format(checkpoint["best_epoch"]))
     print("\tbest_dev_loss: {}".format(checkpoint["best_dev_loss"]))
     print("\tbest_dev_metric: {}".format(checkpoint["best_dev_metric"]))
+
+
+    # Test model
+    test_log = evaluate(device, "test", model, test_data_loader, loss_fn, metric)
+
+    print("Test results")
+    print("\ttest_loss: {}".format(test_log["loss"]))
+    print("\ttest_metric: {}".format(test_log["metric"]))
 
 
 if __name__ == "__main__":
