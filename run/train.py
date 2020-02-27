@@ -8,12 +8,21 @@ import torch.optim as optimizer_modules
 from tqdm import tqdm
 
 from .runnable_utils import merge_configs, init_data_loader, set_seed
+from .test import evaluate
 from utils import DatasetType, Workspace
 from utils import find_cls, load_json, prepare_device
 
 
+def log_process(prefix, writer, epoch, log):
+    for key, val in log.items():
+        writer.add_scalar(f'{prefix}/{key}', val, epoch)
+
+
 def main(config):
     set_seed(config["seed"])
+
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
     # prepare hardware accelearation
     device, gpu_device_ids = prepare_device(config["num_gpu"])
@@ -54,7 +63,8 @@ def main(config):
 
     # Model training initialization
     optimizer_config = config["optimizer"]
-    optimizer_config["config"]["params"] = model.parameters()
+    params = list(filter(lambda x: x.requires_grad, model.parameters()))
+    optimizer_config["config"]["params"] = params
     optimizer_class = getattr(optimizer_modules, optimizer_config["name"])
     optimizer = optimizer_class(**optimizer_config["config"])
 
@@ -69,15 +79,15 @@ def main(config):
     output_dir = os.path.join(config["output_dir"], model_name, dt_string)
     workspace = Workspace(device, output_dir, model, loss_fn, metric, optimizer)
 
+    # store meta data
+    writer = workspace.summary_writer
+    writer.add_scalar('Meta/Parameters', sum(p.numel() for p in params))
+
 
     # Train model
     total_epoch = config["epoch"]
 
-    train_log = {
-        "train_loss": [],
-        "train_metric": [],
-        "dev_loss": [],
-        "dev_metric": [],
+    log = {
         "best_epoch": 0,
         "best_dev_metric": 0,
         "best_dev_loss": 0
@@ -101,32 +111,36 @@ def main(config):
             total_loss += loss.item()
             total_metric += metric(output, target)
 
-        train_log["train_loss"].append(total_loss / len(train_data_loader))
-        train_log["train_metric"].append(total_metric / len(train_data_loader))
+        train_results = {
+            "loss": total_loss / len(train_data_loader),
+            "metric": total_metric / len(train_data_loader)
+        }
 
-        dev_log = evaluate(device, "dev", model, dev_data_loader, loss_fn, metric)
+        log_process('Train', writer, epoch, train_results)
 
-        train_log["dev_loss"].append(dev_log["loss"])
-        train_log["dev_metric"].append(dev_log["metric"])
+        dev_results = evaluate(device, "Dev", model, dev_data_loader, loss_fn, metric)
 
-        if train_log["dev_metric"][-1] > train_log["best_dev_metric"]:
-            print("\tsaving the model with the best dev metric")
-            train_log["best_epoch"] = epoch
-            train_log["best_dev_loss"] = train_log["dev_loss"][-1]
-            train_log["best_dev_metric"] = train_log["dev_metric"][-1]
+        log_process('Dev', writer, epoch, train_results)
 
-            workspace.save_best_model(train_log)
+        # TODO :: different inequality must be used depending on the type of metric
+        if dev_results["metric"] > log["best_dev_metric"]:
+            print("\tsaving the model of the best dev metric")
+            log["best_epoch"] = epoch
+            log["best_dev_loss"] = dev_results["loss"]
+            log["best_dev_metric"] = dev_results["metric"]
+
+            workspace.save_best_model(log)
 
         if epoch % config["checkpoint_frequency"] == 0:
-            workspace.save_checkpoint(epoch, train_log)
+            workspace.save_checkpoint(epoch, log)
 
             print("epochs {}".format(epoch))
-            print("\ttrain_loss: {}".format(train_log["train_loss"][-1]))
-            print("\ttrain_metric: {}".format(train_log["train_metric"][-1]))
-            print("\tdev_loss: {}".format(train_log["dev_loss"][-1]))
-            print("\tdev_metric: {}".format(train_log["dev_metric"][-1]))
+            print("\ttrain_loss: {}".format(train_results["loss"]))
+            print("\ttrain_metric: {}".format(train_results["metric"]))
+            print("\tdev_loss: {}".format(dev_results["loss"]))
+            print("\tdev_metric: {}".format(dev_results["metric"]))
 
-    workspace.save_checkpoint(total_epoch-1, train_log)
+    workspace.save_checkpoint(total_epoch-1, log)
 
     # load the best model
     checkpoint = workspace.load_best_model()
@@ -138,7 +152,7 @@ def main(config):
 
 
     # Test model
-    test_log = evaluate(device, "test", model, test_data_loader, loss_fn, metric)
+    test_log = evaluate(device, "Test", model, test_data_loader, loss_fn, metric)
 
     print("Test results")
     print("\ttest_loss: {}".format(test_log["loss"]))

@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import torch
+from torch.utils.tensorboard import SummaryWriter
 
 from .file_utils import ensure_dir
 
@@ -16,10 +17,12 @@ class Workspace():
         self.optimizer = optimizer
 
         path = Path(self.dir)
-
         if not path.exists():
             # Training case
             ensure_dir(self.dir)
+
+        log_path = path / 'logs'
+        self.summary_writer = SummaryWriter(str(log_path))
 
     def _get_checkpoint_path(self, epoch):
         return Path(self.dir, "checkpoint_{}.pt".format(epoch))
