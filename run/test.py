@@ -36,6 +36,9 @@ def evaluate(device, prefix, model, data_loader, loss_fn, metric):
 def main(config):
     set_seed(config["seed"])
 
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
     # prepare hardware accelearation
     device, gpu_device_ids = prepare_device(config["num_gpu"])
 

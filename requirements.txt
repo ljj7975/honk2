@@ -1,5 +1,6 @@
 tqdm
 numpy
 torch
+tensorboard
 git+https://github.com/daemon/pytorch-pcen
 librosa
