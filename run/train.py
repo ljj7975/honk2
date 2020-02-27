@@ -5,6 +5,7 @@ from datetime import datetime
 
 import torch
 import torch.optim as optimizer_modules
+import torch.optim.lr_scheduler as lr_scheduler_modules
 from tqdm import tqdm
 
 from .runnable_utils import merge_configs, init_data_loader, set_seed
@@ -68,6 +69,10 @@ def main(config):
     optimizer_class = getattr(optimizer_modules, optimizer_config["name"])
     optimizer = optimizer_class(**optimizer_config["config"])
 
+    lr_scheduler_config = config["lr_scheduler"]
+    lr_scheduler_class = getattr(lr_scheduler_modules, lr_scheduler_config["name"])
+    lr_scheduler = lr_scheduler_class(optimizer, **lr_scheduler_config["config"])
+
     loss_fn = find_cls(f"loss_fn.{config['loss_fn'].lower()}")
 
     # TODO:: add flexibility for best metric (i.e. max, min)
@@ -77,7 +82,7 @@ def main(config):
     now = datetime.now()
     dt_string = now.strftime("%Y-%m-%d_%H:%M:%S")
     output_dir = os.path.join(config["output_dir"], model_name, dt_string)
-    workspace = Workspace(device, output_dir, model, loss_fn, metric, optimizer)
+    workspace = Workspace(device, output_dir, model, loss_fn, metric, optimizer, lr_scheduler)
 
     # store meta data
     writer = workspace.summary_writer
@@ -135,10 +140,13 @@ def main(config):
             workspace.save_checkpoint(epoch, log)
 
             print("epochs {}".format(epoch))
+            print("learning rate: {}".format(lr_scheduler.get_lr()))
             print("\ttrain_loss: {}".format(train_results["loss"]))
             print("\ttrain_metric: {}".format(train_results["metric"]))
             print("\tdev_loss: {}".format(dev_results["loss"]))
             print("\tdev_metric: {}".format(dev_results["metric"]))
+
+        lr_scheduler.step()
 
     workspace.save_checkpoint(total_epoch-1, log)
 
