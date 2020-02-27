@@ -1,5 +1,7 @@
 import torch
+
 import utils.color_print as cp
+
 
 def prepare_device(n_gpu_use):
     """

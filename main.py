@@ -1,17 +1,22 @@
 import argparse
 import copy
-import torch
-import numpy as np
 import os
 import random
+from datetime import datetime
+
+import torch
+import numpy as np
+import torch.optim as optimizer_modules
+from tqdm import tqdm
+
+from utils import DatasetType, Workspace
+from utils import find_cls, load_json, prepare_device
+
+# TODO :: create a separate file for triggering registry along with runnable scripts
 import model as model_modules
 import data_loader as data_loader_modules
 import metric as metric_modules
 import loss_function as loss_fn_modules
-import torch.optim as optimizer_modules
-from datetime import datetime
-from tqdm import tqdm
-from utils import prepare_device, load_json, DatasetType, Workspace
 
 
 def merge_configs(base_config, additional_config):
@@ -35,7 +40,7 @@ def init_data_loader(config, type):
     data_loader_config = config["datasets"][type_key]["data_loader"]["config"]
     data_loader_config = merge_configs(config[data_loader_name], data_loader_config)
 
-    data_loader_class = getattr(data_loader_modules, data_loader_name)
+    data_loader_class = find_cls(f"data_loader.{data_loader_name.lower()}")
     data_loader = data_loader_class(data_loader_config, dataset_config)
 
     return data_loader
@@ -64,7 +69,7 @@ def main(mode, config):
         n_labels += 1
 
     model_config = config["model"]
-    model_class = getattr(model_modules, model_config["name"])
+    model_class = find_cls(f"model.{model_config['name'].lower()}")
 
     model_config["config"]["n_labels"] = n_labels
     model = model_class(model_config["config"])
@@ -102,11 +107,10 @@ def main(mode, config):
     optimizer_class = getattr(optimizer_modules, optimizer_config["name"])
     optimizer = optimizer_class(**optimizer_config["config"])
 
-    loss_fn = getattr(loss_fn_modules, config["loss_fn"])
+    loss_fn = find_cls(f"loss_fn.{config['loss_fn'].lower()}")
 
-    # TODO:: support multiple metric
     # TODO:: add flexibility for best metric (i.e. max, min)
-    metric = getattr(metric_modules, config["metric"])
+    metric = find_cls(f"metric.{config['metric'].lower()}")
 
 
     # Workspace preparation

@@ -1,7 +1,8 @@
+import librosa
 import numpy as np
 import pcen
-import librosa
 import scipy
+
 
 class AudioProcessor(object):
     def __init__(self, sr=16000, n_dct_filters=40, n_mels=40, f_max=4000, f_min=20, n_fft=480, hop_ms=10):
