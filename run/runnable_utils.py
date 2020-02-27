@@ -1,10 +1,19 @@
 import copy
+import random
+
+import numpy as np
+import torch
 
 import data_loader as data_loader_modules
 import model as model_modules
 import metric as metric_modules
 import loss_function as loss_fn_modules
 
+
+def set_seed(seed):
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
 
 def merge_configs(base_config, additional_config):
     new_config = copy.deepcopy(base_config)

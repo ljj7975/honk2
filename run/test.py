@@ -8,17 +8,15 @@ import numpy as np
 import torch.optim as optimizer_modules
 from tqdm import tqdm
 
-from .runnable_utils import merge_configs, init_data_loader
+from .runnable_utils import merge_configs, init_data_loader, set_seed
 from utils import DatasetType, Workspace
 from utils import find_cls, load_json, prepare_device
 
 def evaluate(device, prefix, model, data_loader, loss_fn, metric):
-    model.eval()
-
     total_loss = 0
     total_metric = 0
 
-    model.train()
+    model.eval()
     for _, (data, target) in enumerate(tqdm(data_loader, desc=f"Evaluating {prefix} dataset")):
         data, target = data.to(device), target.to(device)
 
@@ -36,19 +34,10 @@ def evaluate(device, prefix, model, data_loader, loss_fn, metric):
     return log
 
 def main(config):
-
-    # set random seed
-    torch.manual_seed(config["seed"])
-    np.random.seed(config["seed"])
-    random.seed(config["seed"])
-
+    set_seed(config["seed"])
 
     # prepare hardware accelearation
     device, gpu_device_ids = prepare_device(config["num_gpu"])
-
-    if "cuda" in str(device):
-        print(f"utilizing gpu devices : {gpu_device_ids}")
-        torch.cuda.manual_seed(config["seed"])
 
 
     # Preapre model
