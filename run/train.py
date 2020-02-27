@@ -112,20 +112,50 @@ def main(config):
     # Train model
     total_epoch = config["epoch"]
 
-    model.train()
+    def evaluate(prefix, model, data_loader, loss_fn, metric):
+        model.eval()
 
-    train_log = {
-        "loss": [],
-        "metric": [],
-        "best_epoch": 0,
-        "best_metric": 0,
-        "best_loss": 0
-    }
-
-    for epoch in tqdm(range(total_epoch)):
         total_loss = 0
         total_metric = 0
 
+        model.train()
+        for _, (data, target) in enumerate(tqdm(data_loader, desc=f"Evaluating {prefix} dataset")):
+            data, target = data.to(device), target.to(device)
+
+            output = model(data)
+            loss = loss_fn(output, target)
+
+            total_loss += loss.item()
+            total_metric += metric(output, target)
+
+
+            train_log["loss"].append(total_loss / len(train_data_loader))
+            train_log["metric"].append(total_metric / len(train_data_loader))
+
+        log = {
+            "loss": total_loss / len(data_loader),
+            "metric": total_metric / len(data_loader)
+        }
+
+        return log
+
+
+    train_log = {
+        "train_loss": [],
+        "train_metric": [],
+        "dev_loss": [],
+        "dev_metric": [],
+        "best_epoch": 0,
+        "best_dev_metric": 0,
+        "best_dev_loss": 0
+    }
+
+
+    for epoch in tqdm(range(total_epoch)):
+        total_train_loss = 0
+        total_train_metric = 0
+
+        model.train()
         for _, (data, target) in enumerate(train_data_loader):
             data, target = data.to(device), target.to(device)
 
@@ -135,17 +165,22 @@ def main(config):
             loss.backward()
             optimizer.step()
 
-            total_loss += loss.item()
-            total_metric += metric(output, target)
+            total_train_loss += loss.item()
+            total_train_metric += metric(output, target)
 
-        train_log["loss"].append(total_loss / len(train_data_loader))
-        train_log["metric"].append(total_metric / len(train_data_loader))
+        train_log["train_loss"].append(total_loss / len(train_data_loader))
+        train_log["train_metric"].append(total_metric / len(train_data_loader))
 
-        if train_log["metric"][-1] > train_log["best_metric"]:
-            print("\tsaving the model with the best metric")
+        dev_log = evaluate("dev", model, dev_data_loader, loss_fn, metric)
+
+        train_log["dev_loss"].append(dev_log["loss"])
+        train_log["dev_metric"].append(dev_log["metric"])
+
+        if train_log["dev_metric"][-1] > train_log["best_dev_metric"]:
+            print("\tsaving the model with the best dev metric")
             train_log["best_epoch"] = epoch
-            train_log["best_loss"] = train_log["loss"][-1]
-            train_log["best_metric"] = train_log["metric"][-1]
+            train_log["best_dev_loss"] = train_log["dev_loss"][-1]
+            train_log["best_dev_metric"] = train_log["dev_metric"][-1]
 
             workspace.save_best_model(train_log)
 
@@ -153,8 +188,10 @@ def main(config):
             workspace.save_checkpoint(epoch, train_log)
 
             print("epochs {}".format(epoch))
-            print("\tloss: {}".format(train_log["loss"][-1]))
-            print("\tmetric: {}".format(train_log["metric"][-1]))
+            print("\ttrain_loss: {}".format(train_log["train_loss"][-1]))
+            print("\ttrain_metric: {}".format(train_log["train_metric"][-1]))
+            print("\tdev_loss: {}".format(train_log["dev_loss"][-1]))
+            print("\tdev_metric: {}".format(train_log["dev_metric"][-1]))
 
     workspace.save_checkpoint(total_epoch-1, train_log)
 
@@ -163,8 +200,8 @@ def main(config):
 
     print("Training results")
     print("\tbest_epoch: {}".format(checkpoint["best_epoch"]))
-    print("\tbest_loss: {}".format(checkpoint["best_loss"]))
-    print("\tbest_metric: {}".format(checkpoint["best_metric"]))
+    print("\tbest_dev_loss: {}".format(checkpoint["best_dev_loss"]))
+    print("\tbest_dev_metric: {}".format(checkpoint["best_dev_metric"]))
 
 
 if __name__ == "__main__":
