@@ -16,7 +16,7 @@ class ResNet(nn.Module):
 
         self.layers["conv_0"] = nn.Conv2d(1, n_maps, (3, 3), padding=1, bias=False)
 
-        for i in range(self.n_layers):
+        for i in range(1, self.n_layers + 1):
             if config["use_dilation"]:
                 padding_size = int(2**((i-1) // 3))
                 dilation_size = int(2**((i-1) // 3))
