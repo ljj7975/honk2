@@ -3,12 +3,9 @@
     "model": {
         "name": "ResNet",
         "config": {
-            "avg_pool": [
-                2,
-                2
-            ],
             "n_feature_maps": 45,
-            "n_layers": 6
+            "n_layers": 13,
+            "use_dilation": true
         }
     },
 
@@ -61,7 +58,7 @@
 
     "AudioDataLoader": {
         "audio_preprocessing": "MFCCs",
-        "batch_size": 512
+        "batch_size": 100
     },
 
     "optimizer": {
@@ -86,12 +83,10 @@
     "silence_class": true,
     "target_class": ["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go"],
     "seed": 100,
-    "epoch": 5,
+    "epoch": 30,
     "metric": "pred_acc",
     "loss_fn": "ce_loss",
-    "num_gpu": 3,
+    "num_gpu": 1,
     "output_dir": "workspaces",
-    "evaluate_model_dir": "workspaces/ResNet/sample_trained_model/",
-    "evaluate_epoch": 10,
-    "checkpoint_frequency": 3
+    "checkpoint_frequency": 10
 }

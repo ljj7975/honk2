@@ -127,6 +127,13 @@ def main(config):
 
         log_process('Dev', writer, epoch, train_results)
 
+        print("epochs {}".format(epoch))
+        print("learning rate: {}".format(lr_scheduler.get_lr()))
+        print("\ttrain_loss: {}".format(train_results["loss"]))
+        print("\ttrain_metric: {}".format(train_results["metric"]))
+        print("\tdev_loss: {}".format(dev_results["loss"]))
+        print("\tdev_metric: {}".format(dev_results["metric"]))
+
         # TODO :: different inequality must be used depending on the type of metric
         if dev_results["metric"] > log["best_dev_metric"]:
             print("\tsaving the model of the best dev metric")
@@ -138,13 +145,6 @@ def main(config):
 
         if epoch % config["checkpoint_frequency"] == 0:
             workspace.save_checkpoint(epoch, log)
-
-            print("epochs {}".format(epoch))
-            print("learning rate: {}".format(lr_scheduler.get_lr()))
-            print("\ttrain_loss: {}".format(train_results["loss"]))
-            print("\ttrain_metric: {}".format(train_results["metric"]))
-            print("\tdev_loss: {}".format(dev_results["loss"]))
-            print("\tdev_metric: {}".format(dev_results["metric"]))
 
         lr_scheduler.step()
 
