@@ -20,7 +20,9 @@ def evaluate(device, prefix, model, data_loader, loss_fn, metric):
     for _, (data, target) in enumerate(tqdm(data_loader, desc=f"Evaluating {prefix} dataset")):
         data, target = data.to(device), target.to(device)
 
-        output = model(data)
+        with torch.no_grad():
+            output = model(data)
+
         loss = loss_fn(output, target)
 
         total_loss += loss.item()
