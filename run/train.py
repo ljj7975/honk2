@@ -71,6 +71,7 @@ def main(config):
 
     lr_scheduler_config = config["lr_scheduler"]
     lr_scheduler_class = getattr(lr_scheduler_modules, lr_scheduler_config["name"])
+    use_per_epoch_stepping = lr_scheduler_config["config"].pop("use_per_epoch_stepping")
     lr_scheduler = lr_scheduler_class(optimizer, **lr_scheduler_config["config"])
 
     loss_fn = find_cls(f"loss_fn.{config['loss_fn'].lower()}")
@@ -98,7 +99,6 @@ def main(config):
         "best_dev_loss": 0
     }
 
-
     for epoch in tqdm(range(total_epoch), desc="Training"):
         total_loss = 0
         total_metric = 0
@@ -112,6 +112,8 @@ def main(config):
             loss = loss_fn(output, target)
             loss.backward()
             optimizer.step()
+            if use_per_epoch_stepping:
+                lr_scheduler.step()
 
             total_loss += loss.item()
             total_metric += metric(output, target)
@@ -146,7 +148,8 @@ def main(config):
         if epoch % config["checkpoint_frequency"] == 0:
             workspace.save_checkpoint(epoch, log)
 
-        lr_scheduler.step()
+        if not use_per_epoch_stepping:
+            lr_scheduler.step()
 
     workspace.save_checkpoint(total_epoch-1, log)
 

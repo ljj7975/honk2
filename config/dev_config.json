@@ -4,8 +4,8 @@
         "name": "ResNet",
         "config": {
             "avg_pool": [
-                2,
-                2
+                4,
+                3
             ],
             "n_feature_maps": 45,
             "n_layers": 6,
@@ -78,6 +78,7 @@
     "lr_scheduler": {
         "name": "StepLR",
         "config": {
+            "use_per_epoch_stepping": false,
             "step_size": 10,
             "gamma": 0.1
         }
