@@ -1,22 +1,28 @@
 import argparse
+import operator
 import os
 import random
 from datetime import datetime
+from pprint import pprint
 
 import torch
 import torch.optim as optimizer_modules
 import torch.optim.lr_scheduler as lr_scheduler_modules
 from tqdm import tqdm
 
-from .runnable_utils import merge_configs, init_data_loader, set_seed
+from .run_utils import merge_configs, init_data_loader, set_seed
 from .test import evaluate
-from utils import DatasetType, Workspace
-from utils import find_cls, load_json, prepare_device
+from data_loader import DatasetType
+from metric import MetricType, collect_metrics
+from utils import Workspace, find_cls, load_json, prepare_device
 
 
 def log_process(prefix, writer, epoch, log):
     for key, val in log.items():
-        writer.add_scalar(f'{prefix}/{key}', val, epoch)
+        if type(val) is dict:
+            writer.add_scalars(f'{prefix}/{key}', val, epoch)
+        else:
+            writer.add_scalar(f'{prefix}/{key}', val, epoch)
 
 
 def main(config):
@@ -36,7 +42,7 @@ def main(config):
         n_labels += 1
 
     model_config = config["model"]
-    model_class = find_cls(f"model.{model_config['name'].lower()}")
+    model_class = find_cls(f"model.{model_config['name']}")
 
     model_config["config"]["n_labels"] = n_labels
     model = model_class(model_config["config"])
@@ -61,6 +67,8 @@ def main(config):
     test_data_loader = init_data_loader(config, DatasetType.TEST)
     print(f"test dataset size: {len(test_data_loader.dataset)}")
 
+    label_mapping = train_data_loader.dataset.label_mapping
+
 
     # Model training initialization
     optimizer_config = config["optimizer"]
@@ -74,16 +82,26 @@ def main(config):
     use_per_epoch_stepping = lr_scheduler_config["config"].pop("use_per_epoch_stepping")
     lr_scheduler = lr_scheduler_class(optimizer, **lr_scheduler_config["config"])
 
-    loss_fn = find_cls(f"loss_fn.{config['loss_fn'].lower()}")
+    loss_fn = find_cls(f"loss_fn.{config['loss_fn']}")
 
-    # TODO:: add flexibility for best metric (i.e. max, min)
-    metric = find_cls(f"metric.{config['metric'].lower()}")
+    metrics = {}
+    for metric_name in config['metric']:
+        metrics[metric_name] = find_cls(f"metric.{metric_name}")()
+
+    criterion = metrics[config['criterion'][0]]
+    assert criterion.get_type() == MetricType.MACRO
+
+    if config['criterion'][1] == "max":
+        criterion_operator = operator.ge
+    elif config['criterion'][1] == "min":
+        criterion_operator = operator.le
+
 
     # Workspace preparation
     now = datetime.now()
     dt_string = now.strftime("%Y-%m-%d_%H:%M:%S")
     output_dir = os.path.join(config["output_dir"], model_name, dt_string)
-    workspace = Workspace(device, output_dir, model, loss_fn, metric, optimizer, lr_scheduler)
+    workspace = Workspace(device, output_dir, model, loss_fn, metrics, optimizer, lr_scheduler)
 
     # store meta data
     writer = workspace.summary_writer
@@ -95,13 +113,12 @@ def main(config):
 
     log = {
         "best_epoch": 0,
-        "best_dev_metric": 0,
+        "best_criterion": 0,
         "best_dev_loss": 0
     }
 
     for epoch in tqdm(range(total_epoch), desc="Training"):
         total_loss = 0
-        total_metric = 0
 
         model.train()
         for _, (data, target) in enumerate(train_data_loader):
@@ -116,32 +133,35 @@ def main(config):
                 lr_scheduler.step()
 
             total_loss += loss.item()
-            total_metric += metric(output, target)
+
+            for metric in metrics.values():
+                metric.accumulate(output, target)
 
         train_results = {
-            "loss": total_loss / len(train_data_loader),
-            "metric": total_metric / len(train_data_loader)
+            "loss": total_loss / len(train_data_loader)
         }
+
+        train_results.update(collect_metrics(metrics, label_mapping))
 
         log_process('Train', writer, epoch, train_results)
 
-        dev_results = evaluate(device, "Dev", model, dev_data_loader, loss_fn, metric)
+        dev_results = evaluate(device, "Dev", model, dev_data_loader, loss_fn, metrics, label_mapping)
 
-        log_process('Dev', writer, epoch, train_results)
+        log_process('Dev', writer, epoch, dev_results)
 
         print("epochs {}".format(epoch))
         print("learning rate: {}".format(lr_scheduler.get_lr()))
-        print("\ttrain_loss: {}".format(train_results["loss"]))
-        print("\ttrain_metric: {}".format(train_results["metric"]))
-        print("\tdev_loss: {}".format(dev_results["loss"]))
-        print("\tdev_metric: {}".format(dev_results["metric"]))
+        print("< train results >")
+        pprint(train_results)
+        print("< dev results >")
+        pprint(dev_results)
 
-        # TODO :: different inequality must be used depending on the type of metric
-        if dev_results["metric"] > log["best_dev_metric"]:
+
+        if criterion_operator(criterion.get_metric(), log["best_criterion"]):
             print("\tsaving the model of the best dev metric")
             log["best_epoch"] = epoch
+            log["best_criterion"] = criterion.get_metric()
             log["best_dev_loss"] = dev_results["loss"]
-            log["best_dev_metric"] = dev_results["metric"]
 
             workspace.save_best_model(log)
 
@@ -151,6 +171,9 @@ def main(config):
         if not use_per_epoch_stepping:
             lr_scheduler.step()
 
+        for metric in metrics.values():
+            metric.reset_metric()
+
     workspace.save_checkpoint(total_epoch-1, log)
 
     # load the best model
@@ -159,15 +182,14 @@ def main(config):
     print("Training results")
     print("\tbest_epoch: {}".format(checkpoint["best_epoch"]))
     print("\tbest_dev_loss: {}".format(checkpoint["best_dev_loss"]))
-    print("\tbest_dev_metric: {}".format(checkpoint["best_dev_metric"]))
+    print("\tbest_criterion: {}".format(checkpoint["best_criterion"]))
 
 
     # Test model
-    test_log = evaluate(device, "Test", model, test_data_loader, loss_fn, metric)
+    test_results = evaluate(device, "Test", model, test_data_loader, loss_fn, metrics, label_mapping)
 
-    print("Test results")
-    print("\ttest_loss: {}".format(test_log["loss"]))
-    print("\ttest_metric: {}".format(test_log["metric"]))
+    print("< test results >")
+    pprint(test_results)
 
 
 if __name__ == "__main__":
