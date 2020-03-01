@@ -30,7 +30,7 @@
             "dataset": {
                 "name": "GSCDataset",
                 "config": {
-                    "noise_pct": 0.0
+                    "noise_pct": 0.1
                 }
             },
             "data_loader": {
@@ -42,7 +42,7 @@
             "dataset": {
                 "name": "GSCDataset",
                 "config": {
-                    "noise_pct": 0.0
+                    "noise_pct": 0.1
                 }
             },
             "data_loader": {
