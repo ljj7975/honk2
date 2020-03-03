@@ -47,7 +47,7 @@ class GSCDatasetPreprocessor(metaclass=Singleton):
 
             audio_counts_by_class[class_name] += count
 
-        self.noise_files = audio_files_by_class.pop("_background_noise_")
+        noise_files = audio_files_by_class.pop("_background_noise_")
 
         # split the dataset into trian/dev/test
         self.bucket_size = 2**27 - 1
@@ -95,6 +95,27 @@ class GSCDatasetPreprocessor(metaclass=Singleton):
                 self.labels_by_dataset[dataset] += ([silence_label] * silence_size)
             self.label_mapping[silence_label] = LABEL_SILENCE
 
+        # noise samples
+        self.noise_samples_by_dataset = {
+            DatasetType.TRAIN: [],
+            DatasetType.DEV: [],
+            DatasetType.TEST: []
+        }
+
+        sample_rate = config["sample_rate"]
+        for file_name in noise_files:
+            full_noise = librosa.core.load(file_name, sr=sample_rate)[0]
+            for i in range(0, len(full_noise)-sample_rate, sample_rate):
+                noise_sample = full_noise[i:i + sample_rate] * random.random()
+
+                bucket = random.random()
+                if bucket < self.test_pct:
+                    self.noise_samples_by_dataset[DatasetType.TEST].append(noise_sample)
+                elif bucket < self.dev_pct + self.test_pct:
+                    self.noise_samples_by_dataset[DatasetType.DEV].append(noise_sample)
+                else:
+                    self.noise_samples_by_dataset[DatasetType.TRAIN].append(noise_sample)
+
 
     def get_bucket_from_file_name(self, audio_file, group_speakers_by_id):
         if group_speakers_by_id:
@@ -132,18 +153,8 @@ class GSCDataset(Dataset):
         self.labels = dataset.labels_by_dataset[type]
         self.label_mapping = dataset.label_mapping
 
-        self.noises = []
-
-        for noise_file in dataset.noise_files:
-            noise = librosa.core.load(noise_file, sr=self.sample_rate)[0]
-            self.noises.append(noise * config["noise_pct"])
-
-    def add_noise(self, audio):
-        noise = random.choice(self.noises)
-        start_pos = random.randint(0, len(noise) - self.sample_rate - 1)
-        noise = noise[start_pos:start_pos + self.sample_rate]
-
-        return audio + noise
+        self.noises = dataset.noise_samples_by_dataset[type]
+        self.noise_pct = config["noise_pct"]
 
     def __getitem__(self, index):
         label = self.labels[index]
@@ -154,7 +165,7 @@ class GSCDataset(Dataset):
             data = librosa.core.load(file_path, sr=self.sample_rate)[0]
             data = np.pad(data, (0, max(0, self.sample_rate - len(data))), "constant")
 
-        data = self.add_noise(data)
+        data += (random.choice(self.noises) * self.noise_pct)
 
         return data, label
 
