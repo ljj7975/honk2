@@ -8,11 +8,11 @@ import librosa
 import numpy as np
 from torch.utils.data import Dataset
 
-from utils import Singleton, LABEL_SILENCE, LABEL_UNKNOWN, DatasetType
+from .data_loader_utils import LABEL_SILENCE, LABEL_UNKNOWN, DatasetType
+from utils import Singleton
 
 
 class GSCDatasetPreprocessor(metaclass=Singleton):
-
     def __init__(self, config):
         super().__init__()
 

@@ -36,8 +36,8 @@ def init_data_loader(config, type):
     data_loader_name = config["datasets"][type_key]["data_loader"]["name"]
     data_loader_config = config["datasets"][type_key]["data_loader"]["config"]
     data_loader_config = merge_configs(config[data_loader_name], data_loader_config)
-    
-    data_loader_class = find_cls(f"data_loader.{data_loader_name.lower()}")
+
+    data_loader_class = find_cls(f"data_loader.{data_loader_name}")
     data_loader = data_loader_class(data_loader_config, dataset_config)
 
     return data_loader

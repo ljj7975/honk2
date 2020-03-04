@@ -6,7 +6,7 @@ from utils import AudioProcessor
 from utils import register_cls
 
 
-@register_cls('data_loader.audiodataloader')
+@register_cls('data_loader.AudioDataLoader')
 class AudioDataLoader(DataLoader):
     def __init__(self, data_loader_config, dataset_config):
         self.dataset = GSCDataset(dataset_config)

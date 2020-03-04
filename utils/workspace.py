@@ -8,12 +8,12 @@ from .file_utils import ensure_dir
 
 
 class Workspace():
-    def __init__(self, device, dir, model, loss_fn, metric, optimizer=None, lr_scheduler=None):
+    def __init__(self, device, dir, model, loss_fn, metrics, optimizer=None, lr_scheduler=None):
         self.device = device
         self.dir = dir
         self.model = model
         self.loss_fn = loss_fn
-        self.metric = metric
+        self.metrics = metrics
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
 
@@ -35,7 +35,7 @@ class Workspace():
         checkpoint = {
             "model_state_dict": self.model.state_dict(),
             "loss_fn": self.loss_fn,
-            "metric": self.metric,
+            "metrics": self.metrics,
             "optimizer_state_dict": self.optimizer.state_dict(),
             "lr_scheduler_state_dict": self.lr_scheduler.state_dict()
             }
@@ -60,7 +60,7 @@ class Workspace():
 
         self.model.load_state_dict(checkpoint.pop("model_state_dict"))
         self.loss_fn = checkpoint.pop("loss_fn")
-        self.metric = checkpoint.pop("metric")
+        self.metrics = checkpoint.pop("metrics")
 
         if self.optimizer is not None:
             self.optimizer.load_state_dict(checkpoint.pop("optimizer_state_dict"))

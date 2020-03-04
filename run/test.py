@@ -2,19 +2,21 @@ import argparse
 import os
 import random
 from datetime import datetime
+from pprint import pprint
 
 import torch
 import numpy as np
 import torch.optim as optimizer_modules
 from tqdm import tqdm
 
-from .runnable_utils import merge_configs, init_data_loader, set_seed
-from utils import DatasetType, Workspace
-from utils import find_cls, load_json, prepare_device
+from .run_utils import merge_configs, init_data_loader, set_seed
+from data_loader import DatasetType
+from metric import collect_metrics
+from utils import Workspace, find_cls, load_json, prepare_device
 
-def evaluate(device, prefix, model, data_loader, loss_fn, metric):
+
+def evaluate(device, prefix, model, data_loader, loss_fn, metrics, label_mapping):
     total_loss = 0
-    total_metric = 0
 
     model.eval()
     for _, (data, target) in enumerate(tqdm(data_loader, desc=f"Evaluating {prefix} dataset")):
@@ -26,14 +28,17 @@ def evaluate(device, prefix, model, data_loader, loss_fn, metric):
         loss = loss_fn(output, target)
 
         total_loss += loss.item()
-        total_metric += metric(output, target)
 
-    log = {
-        "loss": total_loss / len(data_loader),
-        "metric": total_metric / len(data_loader)
+        for metric in metrics.values():
+            metric.accumulate(output, target)
+
+    results = {
+        "loss": total_loss / len(data_loader)
     }
 
-    return log
+    results.update(collect_metrics(metrics, label_mapping))
+
+    return results
 
 def main(config):
     set_seed(config["seed"])
@@ -53,7 +58,7 @@ def main(config):
         n_labels += 1
 
     model_config = config["model"]
-    model_class = find_cls(f"model.{model_config['name'].lower()}")
+    model_class = find_cls(f"model.{model_config['name']}")
 
     model_config["config"]["n_labels"] = n_labels
     model = model_class(model_config["config"])
@@ -70,15 +75,18 @@ def main(config):
     test_data_loader = init_data_loader(config, DatasetType.TEST)
     print(f"test dataset size: {len(test_data_loader.dataset)}")
 
+    label_mapping = test_data_loader.dataset.label_mapping
+
 
     # Model evaluation initialization
-    loss_fn = find_cls(f"loss_fn.{config['loss_fn'].lower()}")
+    loss_fn = find_cls(f"loss_fn.{config['loss_fn']}")
 
-    # TODO:: add flexibility for best metric (i.e. max, min)
-    metric = find_cls(f"metric.{config['metric'].lower()}")
+    metrics = {}
+    for metric_name in config['metric']:
+        metrics[metric_name] = find_cls(f"metric.{metric_name}")
 
     trained_model_dir = config["evaluate_model_dir"]
-    workspace = Workspace(device, trained_model_dir, model, loss_fn, metric)
+    workspace = Workspace(device, trained_model_dir, model, loss_fn, metrics)
 
 
     # load the model to evaluate
@@ -94,11 +102,10 @@ def main(config):
 
 
     # Test model
-    test_log = evaluate(device, "test", model, test_data_loader, loss_fn, metric)
+    test_results = evaluate(device, "test", model, test_data_loader, loss_fn, metrics)
 
     print("Test results")
-    print("\ttest_loss: {}".format(test_log["loss"]))
-    print("\ttest_metric: {}".format(test_log["metric"]))
+    pprint(test_results)
 
 
 if __name__ == "__main__":
