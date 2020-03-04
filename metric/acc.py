@@ -5,7 +5,7 @@ from utils import register_cls
 
 
 @register_cls('metric.Acc')
-class Acc(MacroMetric):
+class Acc(MicroMetric):
     def __init__(self):
         super().__init__()
         self.total = 0

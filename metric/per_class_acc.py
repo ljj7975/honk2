@@ -5,7 +5,7 @@ from utils import register_cls
 
 
 @register_cls('metric.PerClassAcc')
-class PerClassAcc(MicroMetric):
+class PerClassAcc(MacroMetric):
     def __init__(self):
         super().__init__()
         self.correct = {}

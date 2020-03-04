@@ -89,7 +89,7 @@ def main(config):
         metrics[metric_name] = find_cls(f"metric.{metric_name}")()
 
     criterion = metrics[config['criterion'][0]]
-    assert criterion.get_type() == MetricType.MACRO
+    assert criterion.get_type() == MetricType.MICRO
 
     if config['criterion'][1] == "max":
         criterion_operator = operator.ge

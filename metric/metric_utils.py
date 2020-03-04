@@ -27,6 +27,7 @@ class MacroMetric(Metric):
     def get_type(self):
         return self.type
 
+
 class MicroMetric(Metric):
     def __init__(self):
         self.type = MetricType.MICRO
