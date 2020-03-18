@@ -8,8 +8,12 @@ import librosa
 import numpy as np
 from torch.utils.data import Dataset
 
-from utils import Singleton, LABEL_SILENCE, LABEL_UNKNOWN, DatasetType, register_cls
+from .dataset_utils import DatasetType
+from utils import Singleton, register_cls
 
+
+LABEL_SILENCE = "__silence__"
+LABEL_UNKNOWN = "__unknown__"
 
 class GSCDatasetPreprocessor(metaclass=Singleton):
     def __init__(self, config):
@@ -140,7 +144,7 @@ class GSCDatasetPreprocessor(metaclass=Singleton):
             self.audio_files_by_dataset[DatasetType.TRAIN].append(audio_file)
             self.labels_by_dataset[DatasetType.TRAIN].append(label)
 
-@register_cls('dataset.gscdataset')
+@register_cls('dataset.GSCDataset')
 class GSCDataset(Dataset):
     def __init__(self, config):
         super().__init__()

@@ -6,7 +6,8 @@ import librosa
 import numpy as np
 from torch.utils.data import Dataset
 
-from utils import Singleton, DatasetType, load_json, register_cls
+from .dataset_utils import DatasetType
+from utils import Singleton, load_json, register_cls
 
 
 class HeySnipsDatasetPreprocessor(metaclass=Singleton):
@@ -28,14 +29,17 @@ class HeySnipsDatasetPreprocessor(metaclass=Singleton):
             1: "Positive"
         }
 
-        # 9 seconds audio
-
         for dataset in DatasetType:
             json_file = Path(config["data_dir"], f"{dataset.value}.json")
             metadata = load_json(json_file)
 
             for data in metadata:
-                # duration = float(data['duration'])
+                # id: a unique identifier for the entry
+                # is_hotword: 1 if the audio is a "Hey Snips" utterance, 0 otherwise
+                # worker_id: the unique identifier of the contributor - note that worker ids are not consistent across datasets 1 and 2 as they are re-generated for each one of them
+                # duration: the duration of the audio file in seconds
+                # audio_file_path: the relative path of the audio from the root of the directory eg audio_files/<audio-uuid>.
+
                 label = data['is_hotword']
 
                 file_name = "{}/{}".format(config["data_dir"], data["audio_file_path"])
@@ -43,11 +47,7 @@ class HeySnipsDatasetPreprocessor(metaclass=Singleton):
                 self.audio_files_by_dataset[dataset].append(file_name)
                 self.labels_by_dataset[dataset].append(label)
 
-                # for testing
-                if len(self.audio_files_by_dataset[dataset]) > 10:
-                    break;
-
-@register_cls('dataset.heysnipsdataset')
+@register_cls('dataset.HeySnipsDataset')
 class HeySnipsDataset(Dataset):
     def __init__(self, config):
         super().__init__()
@@ -55,10 +55,13 @@ class HeySnipsDataset(Dataset):
 
         type = config["type"]
         self.sample_rate = config["sample_rate"]
-        self.num_sample = config["audio_length"] * self.sample_rate
         self.audio_files = dataset.audio_files_by_dataset[type]
         self.labels = dataset.labels_by_dataset[type]
         self.label_mapping = dataset.label_mapping
+
+        # the length of positive sample ranges from 0.8 ~ 8.8 secs
+        # the length of negative sample ranges from 0.0 ~ 16.6 secs
+        self.num_sample = config["audio_length"] * self.sample_rate
 
         self.noises = np.random.uniform(0, config["noise_pct"], (config["num_noise_sample"], self.num_sample))
 

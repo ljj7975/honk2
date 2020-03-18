@@ -35,7 +35,7 @@ def init_data_loader(config, type):
     dataset_config["silence_class"] = config["silence_class"]
     dataset_config["type"] = type
 
-    dataset_class = find_cls(f"dataset.{dataset_name.lower()}")
+    dataset_class = find_cls(f"dataset.{dataset_name}")
     dataset = dataset_class(dataset_config)
 
     # Initialize data_loader
@@ -43,7 +43,7 @@ def init_data_loader(config, type):
     data_loader_config = config["datasets"][type_key]["data_loader"]["config"]
     data_loader_config = merge_configs(config[data_loader_name], data_loader_config)
 
-    data_loader_class = find_cls(f"data_loader.{data_loader_name.lower()}")
+    data_loader_class = find_cls(f"data_loader.{data_loader_name}")
     data_loader = data_loader_class(data_loader_config, dataset)
 
     return data_loader
