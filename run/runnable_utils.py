@@ -4,6 +4,7 @@ import random
 import numpy as np
 import torch
 
+import dataset as dataset_modules
 import data_loader as data_loader_modules
 import model as model_modules
 import metric as metric_modules
@@ -24,6 +25,7 @@ def merge_configs(base_config, additional_config):
     return new_config
 
 def init_data_loader(config, type):
+    # Initialize dataset
     type_key = type.value
     dataset_name = config["datasets"][type_key]["dataset"]["name"]
     dataset_config = config["datasets"][type_key]["dataset"]["config"]
@@ -33,11 +35,15 @@ def init_data_loader(config, type):
     dataset_config["silence_class"] = config["silence_class"]
     dataset_config["type"] = type
 
+    dataset_class = find_cls(f"dataset.{dataset_name.lower()}")
+    dataset = dataset_class(dataset_config)
+
+    # Initialize data_loader
     data_loader_name = config["datasets"][type_key]["data_loader"]["name"]
     data_loader_config = config["datasets"][type_key]["data_loader"]["config"]
     data_loader_config = merge_configs(config[data_loader_name], data_loader_config)
-    
+
     data_loader_class = find_cls(f"data_loader.{data_loader_name.lower()}")
-    data_loader = data_loader_class(data_loader_config, dataset_config)
+    data_loader = data_loader_class(data_loader_config, dataset)
 
     return data_loader

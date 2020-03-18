@@ -145,6 +145,8 @@ def main(config):
 
             workspace.save_best_model(log)
 
+        # TODO:: create best model at the first iteration to make sure it exists
+
         if epoch % config["checkpoint_frequency"] == 0:
             workspace.save_checkpoint(epoch, log)
 
