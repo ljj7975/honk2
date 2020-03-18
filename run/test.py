@@ -10,7 +10,7 @@ import torch.optim as optimizer_modules
 from tqdm import tqdm
 
 from .run_utils import merge_configs, init_data_loader, set_seed
-from data_loader import DatasetType
+from dataset import DatasetType
 from metric import collect_metrics
 from utils import Workspace, find_cls, load_json, prepare_device
 

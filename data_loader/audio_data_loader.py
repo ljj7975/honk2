@@ -1,16 +1,15 @@
 import torch
 from torch.utils.data import DataLoader
 
-from .gsc_dataset import GSCDataset
 from utils import AudioProcessor
 from utils import register_cls
 
 
 @register_cls('data_loader.AudioDataLoader')
 class AudioDataLoader(DataLoader):
-    def __init__(self, data_loader_config, dataset_config):
-        self.dataset = GSCDataset(dataset_config)
+    def __init__(self, data_loader_config, dataset):
 
+        self.dataset = dataset
         self.audio_preprocessing = data_loader_config["audio_preprocessing"]
         self.audio_processor = AudioProcessor()
 

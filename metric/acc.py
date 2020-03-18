@@ -1,6 +1,6 @@
 import torch
 
-from .metric_utils import MacroMetric
+from .metric_utils import MicroMetric
 from utils import register_cls
 
 

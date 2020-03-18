@@ -20,7 +20,7 @@ class Metric(ABC):
         pass
 
 
-class MacroMetric(Metric):
+class MicroMetric(Metric):
     def __init__(self):
         self.type = MetricType.MACRO
 
@@ -28,7 +28,7 @@ class MacroMetric(Metric):
         return self.type
 
 
-class MicroMetric(Metric):
+class MacroMetric(Metric):
     def __init__(self):
         self.type = MetricType.MICRO
 

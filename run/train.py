@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from .run_utils import merge_configs, init_data_loader, set_seed
 from .test import evaluate
-from data_loader import DatasetType
+from dataset import DatasetType
 from metric import MetricType, collect_metrics
 from utils import Workspace, find_cls, load_json, prepare_device
 
@@ -89,7 +89,7 @@ def main(config):
         metrics[metric_name] = find_cls(f"metric.{metric_name}")()
 
     criterion = metrics[config['criterion'][0]]
-    assert criterion.get_type() == MetricType.MICRO
+    assert criterion.get_type() == MetricType.MACRO
 
     if config['criterion'][1] == "max":
         criterion_operator = operator.ge
