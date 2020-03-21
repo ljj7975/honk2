@@ -14,7 +14,7 @@ from .run_utils import merge_configs, init_data_loader, set_seed
 from .test import evaluate
 from dataset import DatasetType
 from metric import MetricType, collect_metrics
-from utils import Workspace, find_cls, load_json, prepare_device
+from utils import Workspace, find_cls, load_json, prepare_device, num_floats_to_GB
 
 
 def log_process(prefix, writer, epoch, log):
@@ -55,6 +55,15 @@ def main(config):
 
     model.to(device)
     print("model:\n", model)
+
+    num_params = model.num_params()
+    print("number of parameters: "
+        + f"{num_params} "
+        + f"({num_floats_to_GB(num_params)} GB)")
+    num_trainable_params = model.num_trainable_params()
+    print("number of trainable parameters: "
+        + f"{num_trainable_params} "
+        + f"({num_floats_to_GB(num_trainable_params)} GB)")
 
 
     # Prepare DataLoader
@@ -105,7 +114,8 @@ def main(config):
 
     # store meta data
     writer = workspace.summary_writer
-    writer.add_scalar('Meta/Parameters', sum(p.numel() for p in params))
+    writer.add_scalar('Meta/Parameters', num_params)
+    writer.add_scalar('Meta/TrainableParameters', num_trainable_params)
 
 
     # Train model

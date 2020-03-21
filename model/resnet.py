@@ -2,11 +2,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from .model_utils import BaseModel
 from utils import register_cls
 
 
 @register_cls('model.ResNet')
-class ResNet(nn.Module):
+class ResNet(BaseModel):
     def __init__(self, config):
         super().__init__()
         self.n_layers = config["n_layers"]

@@ -1,8 +1,9 @@
 from .audio_processor import AudioProcessor
-from .color_print import ColorEnum, \
-                         print_color
 from .class_registry import register_cls, \
                             find_cls
+from .color_print import ColorEnum, \
+                         print_color
+from .conversion import num_floats_to_GB
 from .file_utils import ensure_dir, \
                         load_json, \
                         save_json, \
