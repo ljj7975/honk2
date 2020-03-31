@@ -10,5 +10,7 @@ from .file_utils import ensure_dir, \
                         load_pkl, \
                         save_pkl
 from .singleton import Singleton
-from .torch_utils import prepare_device
+from .torch_utils import calculate_conv_output_size, \
+                         calculate_pool_output_size, \
+                         prepare_device
 from .workspace import Workspace

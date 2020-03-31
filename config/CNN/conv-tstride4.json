@@ -1,0 +1,137 @@
+{
+
+    "model": {
+        "name": "CNN",
+        "config": {
+            "time": 101,
+            "frequency": 40,
+            "dropout_prob": 0.5,
+            "conv_0": {
+                "out_channels": 78,
+                "kernel_size": [
+                    16,
+                    8
+                ],
+                "stride": [
+                    4,
+                    1
+                ]
+            },
+            "pool_0": {
+                "kernel_size": [
+                    3,
+                    1
+                ]
+            },
+            "conv_1": {
+                "out_channels": 78,
+                "kernel_size": [
+                    5,
+                    4
+                ],
+                "stride": [
+                    1,
+                    1
+                ]
+            },
+            "pool_1": {
+                "kernel_size": [
+                    1,
+                    1
+                ]
+            },
+            "lin_0": {
+                "out_features": 32
+            },
+            "dnn_0": {
+                "out_features": 128
+            },
+            "dnn_1": {
+                "out_features": 128
+            }
+        }
+    },
+
+    "datasets": {
+        "train": {
+            "dataset": {
+                "name": "GSCDataset",
+                "config": {
+                    "noise_pct": 0.1
+                }
+            },
+            "data_loader": {
+                "name":"AudioDataLoader",
+                "config": {}
+            }
+        },
+        "dev": {
+            "dataset": {
+                "name": "GSCDataset",
+                "config": {
+                    "noise_pct": 0.1
+                }
+            },
+            "data_loader": {
+                "name":"AudioDataLoader",
+                "config": {}
+            }
+        },
+        "test": {
+            "dataset": {
+                "name": "GSCDataset",
+                "config": {
+                    "noise_pct": 0.1
+                }
+            },
+            "data_loader": {
+                "name":"AudioDataLoader",
+                "config": {}
+            }
+        }
+    },
+
+    "GSCDataset": {
+        "data_dir": "/data/kws/speech_commands",
+        "sample_rate": 16000,
+        "group_speakers_by_id": true,
+        "dev_pct": 0.1,
+        "test_pct": 0.1
+    },
+
+    "AudioDataLoader": {
+        "audio_preprocessing": "MFCCs",
+        "batch_size": 64
+    },
+
+    "optimizer": {
+        "name": "SGD",
+        "config": {
+            "lr": 0.1,
+            "nesterov": false,
+            "weight_decay": 0.00001,
+            "momentum": 0.9
+        }
+    },
+
+    "lr_scheduler": {
+        "name": "StepLR",
+        "config": {
+            "use_per_epoch_stepping": true,
+            "step_size": 3000,
+            "gamma": 0.1
+        }
+    },
+
+    "unknown_class": true,
+    "silence_class": true,
+    "target_class": ["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go"],
+    "seed": 100,
+    "epoch": 30,
+    "metric": ["Acc", "PerClassAcc"],
+    "criterion": ["Acc", "max"],
+    "loss_fn": "ce_loss",
+    "num_gpu": 1,
+    "output_dir": "workspaces",
+    "checkpoint_frequency": 10
+}
