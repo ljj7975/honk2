@@ -47,7 +47,7 @@ class CNN(BaseModel):
         dnn_out_features = config["lin_0"]["out_features"]
 
         self.layers["lin_0"] = nn.Linear(dnn_in_features, dnn_out_features)
-        
+
         dnn_in_features = dnn_out_features
         dnn_out_features = config["dnn_0"]["out_features"]
 
