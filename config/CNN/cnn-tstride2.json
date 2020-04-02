@@ -13,20 +13,20 @@
                     8
                 ],
                 "stride": [
-                    8,
+                    2,
                     1
                 ]
             },
             "pool_0": {
                 "kernel_size": [
-                    3,
-                    1
+                    1,
+                    3
                 ]
             },
             "conv_1": {
                 "out_channels": 78,
                 "kernel_size": [
-                    5,
+                    9,
                     4
                 ],
                 "stride": [

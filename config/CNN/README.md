@@ -1,5 +1,6 @@
 # Summary of Models
 
+input tensor size = (32, 40)
 kernel = (m,r)
 number of channels (features) = n
 pool = (p,q)
@@ -56,11 +57,11 @@ stride = (s,v)
 
 ## Limiting Parameters - Sliding in Time
 
-### conv-tstride2
+### cnn-tstride2
 
 |  type |  m | r |  n  | s | v | p | q | params |
 |:-----:|:--:|:-:|:---:|:-:|:-:|:-:|:-:|:------:|
-|  conv | 16 | 8 |  78 | 2 | 1 | 3 | 1 |  10.0K |
+|  conv | 16 | 8 |  78 | 2 | 1 | 1 | 3 |  10.0K |
 |  conv |  9 | 4 |  78 | 1 | 1 | 1 | 1 | 219.0K |
 |  lin  |  - | - |  32 | - | - | - | - |  19.8K |
 |  dnn  |  - | - | 128 | - | - | - | - |  4.1K  |
@@ -68,11 +69,11 @@ stride = (s,v)
 |  lin  |  - | - |  12 | - | - | - | - |  1.5K  |
 | total |  - | - |  -  | - | - | - | - | 325.6K |
 
-### conv-tstride4
+### cnn-tstride4
 
 |  type |  m | r |  n  | s | v | p | q | params |
 |:-----:|:--:|:-:|:---:|:-:|:-:|:-:|:-:|:------:|
-|  conv | 16 | 8 |  78 | 4 | 1 | 3 | 1 |  12.8K |
+|  conv | 16 | 8 | 100 | 4 | 1 | 1 | 3 |  12.8K |
 |  conv |  5 | 4 |  78 | 1 | 1 | 1 | 1 | 200.0K |
 |  lin  |  - | - |  32 | - | - | - | - |  25.6K |
 |  dnn  |  - | - | 128 | - | - | - | - |  4.1K  |
@@ -80,11 +81,11 @@ stride = (s,v)
 |  lin  |  - | - |  12 | - | - | - | - |  1.5K  |
 | total |  - | - |  -  | - | - | - | - | 260.4K |
 
-### conv-tstride8
+### cnn-tstride8
 
 |  type |  m | r |  n  | s | v | p | q | params |
 |:-----:|:--:|:-:|:---:|:-:|:-:|:-:|:-:|:------:|
-|  conv | 16 | 8 |  78 | 8 | 1 | 3 | 1 |  16.1K |
+|  conv | 16 | 8 | 126 | 8 | 1 | 1 | 3 |  16.1K |
 |  conv |  5 | 4 |  78 | 1 | 1 | 1 | 1 | 190.5K |
 |  lin  |  - | - |  32 | - | - | - | - |  32.2K |
 |  dnn  |  - | - | 128 | - | - | - | - |  4.1K  |
@@ -94,7 +95,7 @@ stride = (s,v)
 
 ## Limiting Parameters - Pooling in Time
 
-### conv-tpool2
+### cnn-tpool2
 
 |  type |  m | r |  n  | s | v | p | q | params |
 |:-----:|:--:|:-:|:---:|:-:|:-:|:-:|:-:|:------:|
@@ -106,7 +107,7 @@ stride = (s,v)
 |  lin  |  - | - |  12 | - | - | - | - |  1.5K  |
 | total |  - | - |  -  | - | - | - | - |   7.5M |
 
-### conv-tpool3
+### cnn-tpool3
 
 |  type |  m | r |  n  | s | v | p | q | params |
 |:-----:|:--:|:-:|:---:|:-:|:-:|:-:|:-:|:------:|

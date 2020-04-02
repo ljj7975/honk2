@@ -7,26 +7,26 @@
             "frequency": 40,
             "dropout_prob": 0.5,
             "conv_0": {
-                "out_channels": 78,
+                "out_channels": 126,
                 "kernel_size": [
                     16,
                     8
                 ],
                 "stride": [
-                    2,
+                    8,
                     1
                 ]
             },
             "pool_0": {
                 "kernel_size": [
-                    3,
-                    1
+                    1,
+                    3
                 ]
             },
             "conv_1": {
                 "out_channels": 78,
                 "kernel_size": [
-                    9,
+                    5,
                     4
                 ],
                 "stride": [
