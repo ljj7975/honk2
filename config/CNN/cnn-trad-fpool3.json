@@ -98,13 +98,13 @@
 
     "AudioDataLoader": {
         "audio_preprocessing": "MFCCs",
-        "batch_size": 64
+        "batch_size": 2
     },
 
     "optimizer": {
         "name": "SGD",
         "config": {
-            "lr": 0.1,
+            "lr": 0.0001,
             "nesterov": false,
             "weight_decay": 0.00001,
             "momentum": 0.9

@@ -85,10 +85,9 @@ class CNN(BaseModel):
 
         x = self.layers["lin_0"](x)
 
-        if "dnn_0" in self.layers:
-            x = self.layers["dnn_0"](x)
-            x = self.activations["relu"](x)
-            x = self.layers["dropout"](x)
+        x = self.layers["dnn_0"](x)
+        x = self.activations["relu"](x)
+        x = self.layers["dropout"](x)
 
         if "dnn_1" in self.layers:
             x = self.layers["dnn_1"](x)
