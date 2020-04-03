@@ -1,5 +1,5 @@
 {
-
+    "name": "res8",
     "model": {
         "name": "ResNet",
         "config": {

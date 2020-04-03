@@ -1,5 +1,5 @@
 {
-
+    "name": "cnn-tstride2",
     "model": {
         "name": "CNN",
         "config": {

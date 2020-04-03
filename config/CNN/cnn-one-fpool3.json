@@ -1,5 +1,5 @@
 {
-
+    "name": "cnn-one-fpool3",
     "model": {
         "name": "CNN",
         "config": {

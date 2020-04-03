@@ -1,5 +1,5 @@
 {
-
+    "name": "cnn-one-fstride4",
     "model": {
         "name": "CNN",
         "config": {

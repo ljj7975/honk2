@@ -28,6 +28,9 @@ def log_process(prefix, writer, epoch, log):
 def main(config):
     set_seed(config["seed"])
 
+    config_name = config["name"]
+    print(f"config name: {config_name}")
+
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
@@ -108,8 +111,8 @@ def main(config):
 
     # Workspace preparation
     now = datetime.now()
-    dt_string = now.strftime("%Y-%m-%d_%H:%M:%S")
-    output_dir = os.path.join(config["output_dir"], model_name, dt_string)
+    dt_string = now.strftime("%m_%d_%H_%M")
+    output_dir = os.path.join(config["output_dir"], model_name, f"{config_name}_{dt_string}")
     workspace = Workspace(device, output_dir, model, loss_fn, metrics, optimizer, lr_scheduler)
 
     # store meta data
@@ -148,7 +151,8 @@ def main(config):
                 metric.accumulate(output, target)
 
         train_results = {
-            "loss": total_loss / len(train_data_loader)
+            "loss": total_loss / len(train_data_loader),
+            "learning_rate": lr_scheduler.get_lr()
         }
 
         train_results.update(collect_metrics(metrics, label_mapping))
@@ -160,7 +164,7 @@ def main(config):
         log_process('Dev', writer, epoch, dev_results)
 
         print("epochs {}".format(epoch))
-        print("learning rate: {}".format(lr_scheduler.get_lr()))
+        print("learning rate: {}".format(train_results["learning_rate"]))
         print("< train results >")
         pprint(train_results)
         print("< dev results >")

@@ -1,5 +1,5 @@
 {
-
+    "name": "cnn-tpool3",
     "model": {
         "name": "CNN",
         "config": {

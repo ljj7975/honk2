@@ -1,5 +1,5 @@
 {
-
+    "name": "cnn-trad-fpool3",
     "model": {
         "name": "CNN",
         "config": {
