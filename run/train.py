@@ -152,7 +152,7 @@ def main(config):
 
         train_results = {
             "loss": total_loss / len(train_data_loader),
-            "learning_rate": lr_scheduler.get_lr()
+            "learning_rate": lr_scheduler.get_lr()[0]
         }
 
         train_results.update(collect_metrics(metrics, label_mapping))
