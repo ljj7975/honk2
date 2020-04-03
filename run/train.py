@@ -126,7 +126,7 @@ def main(config):
 
     log = {
         "best_epoch": 0,
-        "best_criterion": 0,
+        "best_dev_criterion": 0,
         "best_dev_loss": 0
     }
 
@@ -171,10 +171,10 @@ def main(config):
         pprint(dev_results)
 
 
-        if criterion_operator(criterion.get_metric(), log["best_criterion"]):
+        if criterion_operator(criterion.get_metric(), log["best_dev_criterion"]):
             print("\tsaving the model of the best dev metric")
             log["best_epoch"] = epoch
-            log["best_criterion"] = criterion.get_metric()
+            log["best_dev_criterion"] = criterion.get_metric()
             log["best_dev_loss"] = dev_results["loss"]
 
             workspace.save_best_model(log)
@@ -196,7 +196,7 @@ def main(config):
     print("Training results")
     print("\tbest_epoch: {}".format(checkpoint["best_epoch"]))
     print("\tbest_dev_loss: {}".format(checkpoint["best_dev_loss"]))
-    print("\tbest_criterion: {}".format(checkpoint["best_criterion"]))
+    print("\tbest_dev_criterion: {}".format(checkpoint["best_dev_criterion"]))
 
 
     # Test model
