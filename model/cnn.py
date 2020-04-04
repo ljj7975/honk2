@@ -44,22 +44,31 @@ class CNN(BaseModel):
             tensor_size = [conv_out_channels] + calculate_pool_output_size(tensor_size[1:], pool_kernel_size)
 
         dnn_in_features = np.prod(tensor_size)
-        dnn_out_features = config["lin_0"]["out_features"]
 
-        self.layers["lin_0"] = nn.Linear(dnn_in_features, dnn_out_features)
+        if "lin_0" in config:
+            dnn_out_features = config["lin_0"]["out_features"]
 
-        dnn_in_features = dnn_out_features
-        dnn_out_features = config["dnn_0"]["out_features"]
+            self.layers["lin_0"] = nn.Linear(dnn_in_features, dnn_out_features)
 
-        self.layers["dnn_0"] = nn.Linear(dnn_in_features, dnn_out_features)
+            dnn_in_features = dnn_out_features
+
+        if "dnn_0" in config:
+            dnn_out_features = config["dnn_0"]["out_features"]
+
+            self.layers["dnn_0"] = nn.Linear(dnn_in_features, dnn_out_features)
+
+            dnn_in_features = dnn_out_features
 
         if "dnn_1" in config:
-            dnn_in_features = dnn_out_features
             dnn_out_features = config["dnn_1"]["out_features"]
 
             self.layers["dnn_1"]= nn.Linear(dnn_in_features, dnn_out_features)
 
-        self.layers["lin_1"] = nn.Linear(dnn_out_features, config["n_labels"])
+            dnn_in_features = dnn_out_features
+
+        dnn_out_features = config["n_labels"]
+
+        self.layers["lin_1"] = nn.Linear(dnn_in_features, dnn_out_features)
 
         self.layers["dropout"] = nn.Dropout(config["dropout_prob"])
 
@@ -83,11 +92,13 @@ class CNN(BaseModel):
 
         x = x.view(x.size(0), -1) # shape: (batch, net_out_size)
 
-        x = self.layers["lin_0"](x)
+        if "lin_0" in self.layers:
+            x = self.layers["lin_0"](x)
 
-        x = self.layers["dnn_0"](x)
-        x = self.activations["relu"](x)
-        x = self.layers["dropout"](x)
+        if "dnn_0" in self.layers:
+            x = self.layers["dnn_0"](x)
+            x = self.activations["relu"](x)
+            x = self.layers["dropout"](x)
 
         if "dnn_1" in self.layers:
             x = self.layers["dnn_1"](x)
