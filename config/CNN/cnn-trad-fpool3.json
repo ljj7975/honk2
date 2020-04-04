@@ -89,7 +89,7 @@
     },
 
     "GSCDataset": {
-        "data_dir": "/data/kws/speech_commands",
+        "data_dir": "/data/kws/gsc/v2",
         "sample_rate": 16000,
         "group_speakers_by_id": true,
         "dev_pct": 0.1,
@@ -98,7 +98,7 @@
 
     "AudioDataLoader": {
         "audio_preprocessing": "MFCCs",
-        "batch_size": 2
+        "batch_size": 64
     },
 
     "optimizer": {

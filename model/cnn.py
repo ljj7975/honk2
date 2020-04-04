@@ -90,14 +90,13 @@ class CNN(BaseModel):
             x = self.layers["dropout"](x)
             x = self.layers["pool_1"](x)
 
-        x = x.view(x.size(0), -1) # shape: (batch, net_out_size)
+        x = x.view(x.size(0), -1) # shape: (batch, dnn_in_features)
 
         if "lin_0" in self.layers:
             x = self.layers["lin_0"](x)
 
         if "dnn_0" in self.layers:
             x = self.layers["dnn_0"](x)
-            x = self.activations["relu"](x)
             x = self.layers["dropout"](x)
 
         if "dnn_1" in self.layers:
