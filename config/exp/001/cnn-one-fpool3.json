@@ -75,7 +75,7 @@
     },
 
     "GSCDataset": {
-        "data_dir": "/data/kws/gsc/v2",
+        "data_dir": "/home/brandon1lee/data/kws/gsc/v2",
         "sample_rate": 16000,
         "group_speakers_by_id": true,
         "dev_pct": 0.1,
