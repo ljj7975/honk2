@@ -1,3 +1,4 @@
+tensorflow
 tqdm
 numpy
 torch

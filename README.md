@@ -33,6 +33,11 @@ https://github.com/snipsco/keyword-spotting-research-datasets
 
 ### CNN
 
+#### cnn-trad-pool2
+- train acc: 0.8374908588608109
+- dev acc: 0.8369011456863354
+- test acc: 0.8505514292144947
+
 #### cnn-trad-fpool3
 - train acc: 0.4490127569675794
 - dev acc: 0.458872491568801
