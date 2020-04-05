@@ -1,5 +1,9 @@
 mkdir log_01
 
+echo "cnn-trad-pool2.json"
+date +"%r"
+python -m run.train --config config/exp/01/cnn-trad-pool2.json &> log_01/cnn-trad-pool2.out
+
 echo "cnn-trad-fpool3.json"
 date +"%r"
 python -m run.train --config config/exp/01/cnn-trad-fpool3.json &> log_01/cnn-trad-fpool3.out
