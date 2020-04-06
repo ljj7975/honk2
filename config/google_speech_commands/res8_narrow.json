@@ -1,4 +1,5 @@
 {
+    "name": "res8_narrow",
 
     "model": {
         "name": "ResNet",
@@ -7,7 +8,7 @@
                 4,
                 3
             ],
-            "n_feature_maps": 45,
+            "n_feature_maps": 19,
             "n_layers": 6,
             "use_dilation": false
         }
