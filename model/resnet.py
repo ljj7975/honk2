@@ -26,8 +26,8 @@ class ResNet(BaseModel):
                 self.layers[f"conv_{i}"] = nn.Conv2d(n_maps, n_maps, (3, 3), padding=1, bias=False)
             self.layers[f"bn_{i}"] = nn.BatchNorm2d(n_maps, affine=False)
 
-        if "avg_pool" in config:
-            self.layers["avg_pool"] = nn.AvgPool2d(config["avg_pool"])
+        if "pool" in config:
+            self.layers["pool"] = nn.AvgPool2d(config["pool"])
 
         self.layers["output"] = nn.Linear(n_maps, config["n_labels"])
 
@@ -40,8 +40,8 @@ class ResNet(BaseModel):
         x = self.layers["conv_0"](x)
         x = self.activations["relu"](x)
 
-        if "avg_pool" in self.layers:
-            x = self.layers["avg_pool"](x)
+        if "pool" in self.layers:
+            x = self.layers["pool"](x)
 
         prev_x = x
         for i in range(1, self.n_layers + 1):

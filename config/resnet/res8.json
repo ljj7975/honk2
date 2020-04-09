@@ -3,7 +3,7 @@
     "model": {
         "name": "ResNet",
         "config": {
-            "avg_pool": [
+            "pool": [
                 4,
                 3
             ],

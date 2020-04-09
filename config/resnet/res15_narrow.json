@@ -1,15 +1,12 @@
 {
-    "name": "res26",
+    "name": "res15_narrow",
+
     "model": {
         "name": "ResNet",
         "config": {
-            "pool": [
-                2,
-                2
-            ],
-            "n_feature_maps": 45,
-            "n_layers": 24,
-            "use_dilation": false
+            "n_feature_maps": 19,
+            "n_layers": 13,
+            "use_dilation": true
         }
     },
 
@@ -87,7 +84,7 @@
     "unknown_class": true,
     "silence_class": true,
     "target_class": ["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go"],
-    "seed": 0,
+    "seed": 100,
     "epoch": 30,
     "metric": ["Acc", "PerClassAcc"],
     "criterion": ["Acc", "max"],
