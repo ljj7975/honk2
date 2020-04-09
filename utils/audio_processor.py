@@ -11,7 +11,7 @@ class AudioProcessor(object):
         self.sr = sr
         self.f_max = f_max if f_max is not None else sr // 2
         self.f_min = f_min
-        self.n_fft = n_fft
+        self.n_fft = n_fft # 30 ms window size
         self.hop_length = sr // 1000 * hop_ms
         self.pcen_transform = pcen.StreamingPCENTransform(n_mels=n_mels, n_fft=n_fft, hop_length=self.hop_length, trainable=True)
 
