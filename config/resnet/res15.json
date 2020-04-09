@@ -83,7 +83,7 @@
     "unknown_class": true,
     "silence_class": true,
     "target_class": ["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go"],
-    "seed": 100,
+    "seed": 0,
     "epoch": 30,
     "metric": ["Acc", "PerClassAcc"],
     "criterion": ["Acc", "max"],

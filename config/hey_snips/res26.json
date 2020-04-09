@@ -86,7 +86,7 @@
     "unknown_class": false,
     "silence_class": false,
     "target_class": ["negative", "positive"],
-    "seed": 100,
+    "seed": 0,
     "epoch": 30,
     "metric": ["Acc", "PerClassAcc"],
     "criterion": ["Acc", "max"],

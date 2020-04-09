@@ -107,7 +107,7 @@
     "optimizer": {
         "name": "SGD",
         "config": {
-            "lr": 0.0001,
+            "lr": 0.001,
             "nesterov": false,
             "weight_decay": 0.00001,
             "momentum": 0.9
@@ -126,7 +126,7 @@
     "unknown_class": true,
     "silence_class": true,
     "target_class": ["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go"],
-    "seed": 100,
+    "seed": 0,
     "epoch": 30,
     "metric": ["Acc", "PerClassAcc"],
     "criterion": ["Acc", "max"],
