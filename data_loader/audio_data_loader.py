@@ -16,7 +16,7 @@ class AudioDataLoader(DataLoader):
         super().__init__(
             dataset=self.dataset,
             batch_size=data_loader_config["batch_size"],
-            shuffle=True,
+            shuffle=data_loader_config["shuffle"],
             collate_fn=self.collate_fn)
 
     def collate_fn(self, batch):

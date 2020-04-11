@@ -134,7 +134,7 @@ def main(config):
         total_loss = 0
 
         model.train()
-        for _, (data, target) in enumerate(train_data_loader):
+        for _, (data, target) in enumerate(tqdm(train_data_loader), desc=f"Epoch {epoch}"):
             data, target = data.to(device), target.to(device)
 
             optimizer.zero_grad()
