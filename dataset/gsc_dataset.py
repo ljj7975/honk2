@@ -208,7 +208,7 @@ class GSCDataset(Dataset):
 
         self.num_sample = int((total_length - self.window_size) / self.shift_size)
 
-        print(f"with the window size of {self.window_size} and shfit size {self.shift_size}, data has {self.num_sample} samples");
+        print(f"with the window size of {self.window_size} and shfit size {self.shift_size}, {type} has {self.num_sample} samples");
 
         # create random stream by shuffling audio files
         self.audio_files, self.labels = shuffle_in_groups(self.audio_files, self.labels)
