@@ -177,7 +177,7 @@ class GSCDataset(Dataset):
         return len(self.labels)
 
 @register_cls('dataset.GSCStreamingDataset')
-class GSCDataset(Dataset):
+class GSCStreamingDataset(Dataset):
     def __init__(self, config):
         super().__init__()
         dataset = GSCDatasetPreprocessor(config)
