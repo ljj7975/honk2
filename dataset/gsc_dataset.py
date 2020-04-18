@@ -191,6 +191,9 @@ class GSCStreamingDataset(Dataset):
         self.noises = dataset.noise_samples_by_dataset[type]
         self.noise_pct = config["noise_pct"]
 
+        # create random stream by shuffling audio files
+        self.audio_files, self.labels = shuffle_in_groups(self.audio_files, self.labels)
+
         # calculate total number of samples
         self.shift_size = int(10 / 1000 * self.sample_rate)
         # TODO:: dynamically load window size from config
@@ -210,10 +213,8 @@ class GSCStreamingDataset(Dataset):
 
         print(f"with the window size of {self.window_size} and shfit size {self.shift_size}, {type} has {self.num_sample} samples");
 
-        # create random stream by shuffling audio files
-        self.audio_files, self.labels = shuffle_in_groups(self.audio_files, self.labels)
 
-        # bookkeeping variables for streaming
+    def __reset_state(self):
         self.loaded_data = np.array([])
         self.loaded_labels = []
         self.audio_file_idx = 0
@@ -234,6 +235,9 @@ class GSCStreamingDataset(Dataset):
 
     def __getitem__(self, index):
         # NOTE:: shuffling must be turned off for data loader
+
+        if index == 0:
+            self.__reset_state()
 
         while len(self.loaded_labels) < self.window_size:
             audio_data, label = self.__load_data(self.audio_file_idx)
