@@ -64,7 +64,8 @@
     "AudioDataLoader": {
         "audio_preprocessing": "MFCCs",
         "batch_size": 512,
-        "shuffle": false
+        "shuffle": false,
+        "num_workers": 2
     },
 
     "optimizer": {

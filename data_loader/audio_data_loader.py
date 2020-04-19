@@ -17,7 +17,8 @@ class AudioDataLoader(DataLoader):
             dataset=self.dataset,
             batch_size=data_loader_config["batch_size"],
             shuffle=data_loader_config["shuffle"],
-            collate_fn=self.collate_fn)
+            collate_fn=self.collate_fn,
+            num_workers=data_loader_config["num_workers"])
 
     def collate_fn(self, batch):
         processed = None
