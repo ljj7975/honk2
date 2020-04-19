@@ -194,15 +194,15 @@ class GSCStreamingDataset(StreamingDataset):
         self.audio_files, self.labels = shuffle_in_groups(self.audio_files, self.labels)
 
         # calculate total length of the audio
-        config['total_num_sampels'] = 0;
+        config['total_num_samples'] = 0
         samples_per_audio = self.sample_rate
 
         for file_path, label in tqdm(zip(self.audio_files, self.labels), total=len(self.labels), desc=f"Calculating the size of {type}"):
             if LABEL_SILENCE == self.label_mapping[label]:
-                config['total_num_sampels'] += samples_per_audio
+                config['total_num_samples'] += samples_per_audio
             else:
                 data = librosa.core.load(file_path, sr=self.sample_rate)[0]
-                config['total_num_sampels'] += len(data)
+                config['total_num_samples'] += len(data)
 
         super().__init__(config)
 

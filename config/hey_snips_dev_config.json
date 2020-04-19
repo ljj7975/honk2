@@ -1,0 +1,101 @@
+{
+    "name": "dev",
+
+    "model": {
+        "name": "ResNet",
+        "config": {
+            "pool": [
+                4,
+                3
+            ],
+            "n_feature_maps": 19,
+            "n_layers": 6,
+            "use_dilation": false
+        }
+    },
+
+    "datasets": {
+        "train": {
+            "dataset": {
+                "name": "HeySnipsStreamingDataset",
+                "config": {
+                    "noise_pct": 0.1
+                }
+            },
+            "data_loader": {
+                "name":"AudioDataLoader",
+                "config": {}
+            }
+        },
+        "dev": {
+            "dataset": {
+                "name": "HeySnipsStreamingDataset",
+                "config": {
+                    "noise_pct": 0.1
+                }
+            },
+            "data_loader": {
+                "name":"AudioDataLoader",
+                "config": {}
+            }
+        },
+        "test": {
+            "dataset": {
+                "name": "HeySnipsStreamingDataset",
+                "config": {
+                    "noise_pct": 0.1
+                }
+            },
+            "data_loader": {
+                "name":"AudioDataLoader",
+                "config": {}
+            }
+        }
+    },
+
+    "HeySnipsStreamingDataset": {
+        "data_dir": "/data/kws/hey_snips",
+        "sample_rate": 16000,
+        "num_noise_sample": 200,
+        "window_size_ms": 1000,
+        "shift_size_ms": 10
+    },
+
+    "AudioDataLoader": {
+        "audio_preprocessing": "MFCCs",
+        "batch_size": 512,
+        "shuffle": false,
+        "num_workers": 2
+    },
+
+    "optimizer": {
+        "name": "SGD",
+        "config": {
+            "lr": 0.1,
+            "nesterov": false,
+            "weight_decay": 0.00001,
+            "momentum": 0.9
+        }
+    },
+
+    "lr_scheduler": {
+        "name": "StepLR",
+        "config": {
+            "use_per_epoch_stepping": false,
+            "step_size": 1,
+            "gamma": 0.1
+        }
+    },
+
+    "unknown_class": true,
+    "silence_class": true,
+    "target_class": ["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go"],
+    "seed": 100,
+    "epoch": 3,
+    "metric": ["Acc", "PerClassAcc"],
+    "criterion": ["Acc", "max"],
+    "loss_fn": "ce_loss",
+    "num_gpu": 1,
+    "output_dir": "workspaces",
+    "checkpoint_frequency": 10
+}

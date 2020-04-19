@@ -4,13 +4,17 @@ from pathlib import Path
 
 import librosa
 import numpy as np
+from tqdm import tqdm
 from torch.utils.data import Dataset
 
-from .dataset_utils import DatasetType
+from .dataset_utils import DatasetType, StreamingDataset, shuffle_in_groups
 from utils import Singleton, load_json, register_cls
 
 
 class HeySnipsDatasetPreprocessor(metaclass=Singleton):
+    # the length of positive sample ranges from 0.8 ~ 8.8 secs
+    # the length of negative sample ranges from 0.0 ~ 16.6 secs
+
     def __init__(self, config):
         super().__init__()
 
@@ -59,8 +63,7 @@ class HeySnipsDataset(Dataset):
         self.labels = dataset.labels_by_dataset[type]
         self.label_mapping = dataset.label_mapping
 
-        # the length of positive sample ranges from 0.8 ~ 8.8 secs
-        # the length of negative sample ranges from 0.0 ~ 16.6 secs
+        # use fixed length for each sample
         self.num_sample = config["audio_length"] * self.sample_rate
 
         self.noises = np.random.uniform(0, config["noise_pct"], (config["num_noise_sample"], self.num_sample))
@@ -86,3 +89,36 @@ class HeySnipsDataset(Dataset):
 
     def __len__(self):
         return len(self.labels)
+
+@register_cls('dataset.HeySnipsStreamingDataset')
+class HeySnipsStreamingDataset(StreamingDataset):
+    def __init__(self, config):
+        dataset = HeySnipsDatasetPreprocessor(config)
+
+        type = config["type"]
+        self.sample_rate = config["sample_rate"]
+        self.audio_files = dataset.audio_files_by_dataset[type]
+        self.labels = dataset.labels_by_dataset[type]
+        self.label_mapping = dataset.label_mapping
+
+        # create random stream by shuffling audio files
+        self.audio_files, self.labels = shuffle_in_groups(self.audio_files, self.labels)
+        self.noise_pct = config["noise_pct"]
+
+        # calculate total length of the audio
+        config['total_num_samples'] = 0;
+        samples_per_audio = self.sample_rate
+
+        for file_path, label in tqdm(zip(self.audio_files, self.labels), total=len(self.labels), desc=f"Calculating the size of {type}"):
+            data = librosa.core.load(file_path, sr=self.sample_rate)[0]
+            config['total_num_samples'] += len(data)
+
+        super().__init__(config)
+
+    def _StreamingDataset__load_sample(self, index):
+        label = self.labels[index]
+        file_path = self.audio_files[index]
+        data = librosa.core.load(file_path, sr=self.sample_rate)[0]
+
+        data += np.random.uniform(0, self.noise_pct, len(data))
+        return data, label

@@ -28,8 +28,8 @@ class StreamingDataset(ABC, Dataset):
         samples_per_ms = int(self.sample_rate / 1000)
         self.shift_size = config['shift_size_ms'] * samples_per_ms
         self.window_size = config['window_size_ms'] * samples_per_ms
-        self.num_samples = int((config['total_num_sampels'] - self.window_size) / self.shift_size)
-        print(f"with the window size of {self.window_size} and shfit size {self.shift_size}, {type} has {self.num_samples} samples")
+        self.num_samples = int((config['total_num_samples'] - self.window_size) / self.shift_size)
+        print(f"with the window size of {self.window_size} and shfit size {self.shift_size}, {config['type']} has {self.num_samples} samples")
 
         # to trigger the __reset_state at the start of every iteration
         self.last_index = self.num_samples
