@@ -9,7 +9,7 @@ import numpy as np
 from tqdm import tqdm
 from torch.utils.data import Dataset
 
-from .dataset_utils import DatasetType, shuffle_in_groups
+from .dataset_utils import DatasetType, StreamingDataset, shuffle_in_groups
 from utils import Singleton, register_cls
 
 
@@ -177,9 +177,8 @@ class GSCDataset(Dataset):
         return len(self.labels)
 
 @register_cls('dataset.GSCStreamingDataset')
-class GSCStreamingDataset(Dataset):
+class GSCStreamingDataset(StreamingDataset):
     def __init__(self, config):
-        super().__init__()
         dataset = GSCDatasetPreprocessor(config)
 
         type = config["type"]
@@ -194,33 +193,20 @@ class GSCStreamingDataset(Dataset):
         # create random stream by shuffling audio files
         self.audio_files, self.labels = shuffle_in_groups(self.audio_files, self.labels)
 
-        # calculate total number of samples
-        self.shift_size = int(10 / 1000 * self.sample_rate)
-        # TODO:: dynamically load window size from config
-        self.window_size = self.sample_rate
-
-        total_length = 0;
         # calculate total length of the audio
+        config['total_num_sampels'] = 0;
+        samples_per_audio = self.sample_rate
 
         for file_path, label in tqdm(zip(self.audio_files, self.labels), total=len(self.labels), desc=f"Calculating the size of {type}"):
             if LABEL_SILENCE == self.label_mapping[label]:
-                total_length += self.window_size
+                config['total_num_sampels'] += samples_per_audio
             else:
                 data = librosa.core.load(file_path, sr=self.sample_rate)[0]
-                total_length += len(data)
+                config['total_num_sampels'] += len(data)
 
-        self.num_sample = int((total_length - self.window_size) / self.shift_size)
+        super().__init__(config)
 
-        print(f"with the window size of {self.window_size} and shfit size {self.shift_size}, {type} has {self.num_sample} samples");
-
-
-    def __reset_state(self):
-        self.loaded_data = np.array([])
-        self.loaded_labels = []
-        self.audio_file_idx = 0
-        self.label_counter = len(self.label_mapping) * [0]
-
-    def __load_data(self, index):
+    def _StreamingDataset__load_sample(self, index):
         label = self.labels[index]
         if LABEL_SILENCE == self.label_mapping[label]:
             data = np.zeros(self.window_size)
@@ -232,55 +218,4 @@ class GSCStreamingDataset(Dataset):
         data += (random.choice(self.noises) * self.noise_pct)
 
         return data, label
-
-    def __getitem__(self, index):
-        # NOTE:: shuffling must be turned off for data loader
-
-        if index == 0:
-            self.__reset_state()
-
-        while len(self.loaded_labels) < self.window_size:
-            audio_data, label = self.__load_data(self.audio_file_idx)
-
-            self.loaded_data = np.concatenate((self.loaded_data, audio_data), axis=0)
-            prev_loaded_labels_size = len(self.loaded_labels)
-            self.loaded_labels += len(audio_data) * [label]
-
-            assert len(self.loaded_data) == len(self.loaded_labels)
-
-            # update label_counter if necessary
-            if prev_loaded_labels_size < self.window_size:
-                multiples = min(self.window_size, len(self.loaded_data)) - prev_loaded_labels_size
-                self.label_counter[label] += multiples
-
-            self.audio_file_idx += 1
-
-        # construct return pair
-        audio_window = self.loaded_data[:self.window_size]
-
-        # label of the largest portion is used for target label
-        max_label_count = 0;
-        max_label = None;
-        for label, count in enumerate(self.label_counter):
-            if count > max_label_count:
-                max_label = label
-                max_label_count = count
-
-        # update the windows
-        for i in range(0, self.shift_size):
-            self.label_counter[self.loaded_labels[i]] -= 1
-
-        for i in range(0, self.shift_size):
-            label_idx = self.window_size + i
-
-            if len(self.loaded_labels) > label_idx:
-                self.label_counter[self.loaded_labels[label_idx]] += 1
-
-        self.loaded_labels = self.loaded_labels[self.shift_size:]
-        self.loaded_data = self.loaded_data[self.shift_size:]
-
-        return audio_window, max_label
-
-    def __len__(self):
-        return self.num_sample
 

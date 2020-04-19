@@ -58,7 +58,9 @@
         "sample_rate": 16000,
         "group_speakers_by_id": true,
         "dev_pct": 0.1,
-        "test_pct": 0.1
+        "test_pct": 0.1,
+        "window_size_ms": 1000,
+        "shift_size_ms": 10
     },
 
     "AudioDataLoader": {
