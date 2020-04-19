@@ -260,10 +260,10 @@ class GSCStreamingDataset(Dataset):
 
         # label of the largest portion is used for target label
         max_label_count = 0;
-        label = None;
+        max_label = None;
         for label, count in enumerate(self.label_counter):
             if count > max_label_count:
-                label = label
+                max_label = label
                 max_label_count = count
 
         # update the windows
@@ -279,7 +279,7 @@ class GSCStreamingDataset(Dataset):
         self.loaded_labels = self.loaded_labels[self.shift_size:]
         self.loaded_data = self.loaded_data[self.shift_size:]
 
-        return audio_window, label
+        return audio_window, max_label
 
     def __len__(self):
         return self.num_sample
