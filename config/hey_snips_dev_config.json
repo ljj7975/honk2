@@ -1,61 +1,23 @@
 {
-    "name": "cnn-tstride2",
+    "name": "dev",
+
     "model": {
-        "name": "CNN",
+        "name": "ResNet",
         "config": {
-            "time": 101,
-            "frequency": 40,
-            "dropout_prob": 0.5,
-            "conv_0": {
-                "out_channels": 78,
-                "kernel_size": [
-                    16,
-                    8
-                ],
-                "stride": [
-                    2,
-                    1
-                ]
-            },
-            "pool_0": {
-                "kernel_size": [
-                    1,
-                    3
-                ]
-            },
-            "conv_1": {
-                "out_channels": 78,
-                "kernel_size": [
-                    9,
-                    4
-                ],
-                "stride": [
-                    1,
-                    1
-                ]
-            },
-            "pool_1": {
-                "kernel_size": [
-                    1,
-                    1
-                ]
-            },
-            "lin_0": {
-                "out_features": 32
-            },
-            "dnn_0": {
-                "out_features": 128
-            },
-            "dnn_1": {
-                "out_features": 128
-            }
+            "pool": [
+                4,
+                3
+            ],
+            "n_feature_maps": 19,
+            "n_layers": 6,
+            "use_dilation": false
         }
     },
 
     "datasets": {
         "train": {
             "dataset": {
-                "name": "GSCDataset",
+                "name": "HeySnipsStreamingDataset",
                 "config": {
                     "noise_pct": 0.1
                 }
@@ -67,7 +29,7 @@
         },
         "dev": {
             "dataset": {
-                "name": "GSCDataset",
+                "name": "HeySnipsStreamingDataset",
                 "config": {
                     "noise_pct": 0.1
                 }
@@ -79,7 +41,7 @@
         },
         "test": {
             "dataset": {
-                "name": "GSCDataset",
+                "name": "HeySnipsStreamingDataset",
                 "config": {
                     "noise_pct": 0.1
                 }
@@ -91,23 +53,25 @@
         }
     },
 
-    "GSCDataset": {
-        "data_dir": "/data/kws/gsc/v2",
+    "HeySnipsStreamingDataset": {
+        "data_dir": "/data/kws/hey_snips",
         "sample_rate": 16000,
-        "group_speakers_by_id": true,
-        "dev_pct": 0.1,
-        "test_pct": 0.1
+        "num_noise_sample": 200,
+        "window_size_ms": 1000,
+        "shift_size_ms": 10
     },
 
     "AudioDataLoader": {
         "audio_preprocessing": "MFCCs",
-        "batch_size": 64
+        "batch_size": 512,
+        "shuffle": false,
+        "num_workers": 2
     },
 
     "optimizer": {
         "name": "SGD",
         "config": {
-            "lr": 0.001,
+            "lr": 0.1,
             "nesterov": false,
             "weight_decay": 0.00001,
             "momentum": 0.9
@@ -117,8 +81,8 @@
     "lr_scheduler": {
         "name": "StepLR",
         "config": {
-            "use_per_epoch_stepping": true,
-            "step_size": 3000,
+            "use_per_epoch_stepping": false,
+            "step_size": 1,
             "gamma": 0.1
         }
     },
@@ -126,8 +90,8 @@
     "unknown_class": true,
     "silence_class": true,
     "target_class": ["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go"],
-    "seed": 0,
-    "epoch": 30,
+    "seed": 100,
+    "epoch": 3,
     "metric": ["Acc", "PerClassAcc"],
     "criterion": ["Acc", "max"],
     "loss_fn": "ce_loss",

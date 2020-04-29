@@ -6,9 +6,10 @@ from pathlib import Path
 
 import librosa
 import numpy as np
+from tqdm import tqdm
 from torch.utils.data import Dataset
 
-from .dataset_utils import DatasetType
+from .dataset_utils import DatasetType, StreamingDataset, shuffle_in_groups
 from utils import Singleton, register_cls
 
 
@@ -174,3 +175,47 @@ class GSCDataset(Dataset):
 
     def __len__(self):
         return len(self.labels)
+
+@register_cls('dataset.GSCStreamingDataset')
+class GSCStreamingDataset(StreamingDataset):
+    def __init__(self, config):
+        dataset = GSCDatasetPreprocessor(config)
+
+        type = config["type"]
+        self.sample_rate = config["sample_rate"]
+        self.audio_files = dataset.audio_files_by_dataset[type]
+        self.labels = dataset.labels_by_dataset[type]
+        self.label_mapping = dataset.label_mapping
+
+        self.noises = dataset.noise_samples_by_dataset[type]
+        self.noise_pct = config["noise_pct"]
+
+        # create random stream by shuffling audio files
+        self.audio_files, self.labels = shuffle_in_groups(self.audio_files, self.labels)
+
+        # calculate total length of the audio
+        config['total_num_samples'] = 0
+        samples_per_audio = self.sample_rate
+
+        for file_path, label in tqdm(zip(self.audio_files, self.labels), total=len(self.labels), desc=f"Calculating the size of {type}"):
+            if LABEL_SILENCE == self.label_mapping[label]:
+                config['total_num_samples'] += samples_per_audio
+            else:
+                data = librosa.core.load(file_path, sr=self.sample_rate)[0]
+                config['total_num_samples'] += len(data)
+
+        super().__init__(config)
+
+    def _load_sample(self, index):
+        label = self.labels[index]
+        if LABEL_SILENCE == self.label_mapping[label]:
+            data = np.zeros(self.window_size)
+        else:
+            file_path = self.audio_files[index]
+            data = librosa.core.load(file_path, sr=self.sample_rate)[0]
+            data = np.pad(data, (0, max(0, self.sample_rate - len(data))), "constant")
+
+        data += (random.choice(self.noises) * self.noise_pct)
+
+        return data, label
+
