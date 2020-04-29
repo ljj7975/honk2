@@ -115,7 +115,7 @@ class HeySnipsStreamingDataset(StreamingDataset):
 
         super().__init__(config)
 
-    def _StreamingDataset__load_sample(self, index):
+    def _load_sample(self, index):
         label = self.labels[index]
         file_path = self.audio_files[index]
         data = librosa.core.load(file_path, sr=self.sample_rate)[0]

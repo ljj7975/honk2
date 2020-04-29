@@ -206,7 +206,7 @@ class GSCStreamingDataset(StreamingDataset):
 
         super().__init__(config)
 
-    def _StreamingDataset__load_sample(self, index):
+    def _load_sample(self, index):
         label = self.labels[index]
         if LABEL_SILENCE == self.label_mapping[label]:
             data = np.zeros(self.window_size)

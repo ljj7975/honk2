@@ -35,10 +35,10 @@ class StreamingDataset(ABC, Dataset):
         self.last_index = self.num_samples
 
     @abstractmethod
-    def __load_sample(self, index):
+    def _load_sample(self, index):
         pass
 
-    def __reset_state(self):
+    def _reset_state(self):
         self.loaded_data = np.array([])
         self.loaded_labels = []
         self.audio_file_idx = 0
@@ -46,11 +46,11 @@ class StreamingDataset(ABC, Dataset):
 
     def __getitem__(self, index):
         if index < self.last_index:
-            self.__reset_state()
+            self._reset_state()
 
         # update the loaded data if it is not sufficient
         while len(self.loaded_labels) < self.window_size:
-            audio_data, label = self.__load_sample(self.audio_file_idx)
+            audio_data, label = self._load_sample(self.audio_file_idx)
 
             self.loaded_data = np.concatenate((self.loaded_data, audio_data), axis=0)
             prev_loaded_labels_size = len(self.loaded_labels)
